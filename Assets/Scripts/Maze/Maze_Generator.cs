@@ -97,7 +97,7 @@ public class Maze_Generator : MonoBehaviour
             explored.Add(currentNode);
             frontier.Push(nextNode);
 
-            if (GetComponent<Pathfinding>().graphRep) yield return null;
+            if (Pathfinding.graphRep) yield return null;
             
 
         }

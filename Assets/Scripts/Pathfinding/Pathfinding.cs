@@ -7,7 +7,7 @@ using Unity.VisualScripting;
 using System.Diagnostics;
 
 
-public static class Pathfinding 
+public class Pathfinding : MonoBehaviour
 {
 
     public static Action onProcessingEnd;
@@ -16,7 +16,7 @@ public static class Pathfinding
     public static float maxIterationTicks =  Time.fixedDeltaTime* Stopwatch.Frequency;
     public static bool repSlowDown;
     public static float waitTime = 0.05f;
-    public static GameObject objective;
+    public GameObject objective;
 
     
 
@@ -44,7 +44,7 @@ public static class Pathfinding
     
 
     
-    public static IEnumerator AstarPathfind(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback, GridNode[,] grid)
+    public IEnumerator AstarPathfind(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback, GridNode[,] grid)
     {
 
         Stopwatch sw = new Stopwatch();                                                 // Variabile per il tracciamento del tempo di computazione
@@ -288,7 +288,7 @@ public static class Pathfinding
     public IEnumerator BFGreedyPathfind(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback, GridNode[,] grid)
     {
         HashSet<GridNode> explored = new HashSet<GridNode>();
-        Heap<GridNode> frontier = new Heap<GridNode>(this.Grid.MaxSize);
+        Heap<GridNode> frontier = new Heap<GridNode>(Grid.MaxSize);
         Stopwatch sw = new Stopwatch();
         sw.Restart();
         float frameStartTicks = sw.ElapsedTicks;
@@ -370,7 +370,7 @@ public static class Pathfinding
 
         Stopwatch sw = new Stopwatch();
         HashSet<GridNode> explored = new HashSet<GridNode>();
-        Heap<GridNode> frontier = new Heap<GridNode>(this.Grid.MaxSize);
+        Heap<GridNode> frontier = new Heap<GridNode>(Grid.MaxSize);
 
 
         if (!targetNode.walkable)
@@ -460,7 +460,7 @@ public static class Pathfinding
     public IEnumerator PathFoundRoutine(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback)
     {
         List<GridNode> path = parentChildPath(startNode, targetNode);
-        Grid.path = path;
+        //Grid.path = path;
         PathRequestManager.FinishedProcessing(new PathResult(pathToWaypoints(path), true, feedback));
         if (graphRep)
         {

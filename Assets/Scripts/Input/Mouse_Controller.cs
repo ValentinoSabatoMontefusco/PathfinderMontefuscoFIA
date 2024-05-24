@@ -82,28 +82,28 @@ public class Mouse_Controller : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.G))
         {
-            if (GetComponent<Pathfinding>().graphRep)
+            if (Pathfinding.graphRep)
             {
-                GetComponent<Pathfinding>().graphRep = false;
+                Pathfinding.graphRep = false;
                 Debug.Log("Rapp. grafica disabilitata");
             }
             else
             {
-                GetComponent<Pathfinding>().graphRep = true;
+                Pathfinding.graphRep = true;
                 Debug.Log("Rapp. grafica abilitata");
             }
         }
 
         if (Input.GetKeyDown(KeyCode.H))
         {
-            if (GetComponent<Pathfinding>().repSlowDown == true)
+            if (Pathfinding.repSlowDown == true)
             {
-                GetComponent<Pathfinding>().repSlowDown = false;
+                Pathfinding.repSlowDown = false;
                 Debug.Log("Rallentamento grafico disabilitata");
             }
             else
             {
-                GetComponent<Pathfinding>().repSlowDown = true;
+                Pathfinding.repSlowDown = true;
                 Debug.Log("Rallentamento grafico abilitata");
             }
         }

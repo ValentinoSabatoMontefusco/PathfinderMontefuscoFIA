@@ -145,7 +145,7 @@ public class Grid : MonoBehaviour
 
     }
 
-    public List<GridNode> GetOrtogonalNeighbors(GridNode node, GridNode[,] grid)
+    public static List<GridNode> GetOrtogonalNeighbors(GridNode node, GridNode[,] grid)
     {
         if (node != null)
         {
@@ -163,7 +163,7 @@ public class Grid : MonoBehaviour
         return null;
     }
 
-    public int getDistance(GridNode node1, GridNode node2)
+    public static int getDistance(GridNode node1, GridNode node2)
     {
         //return Mathf.Abs(Mathf.RoundToInt(Mathf.Sqrt(((node1.GridX+node2.GridX)^2 + (node1.GridY+node2.GridY)^2)*10)));
 
