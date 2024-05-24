@@ -7,5 +7,7 @@ public enum searchAlgorithm
     BFGreedy,
     BFS,
     Astar,
-    DFS
+    UniformCost,
+    DFS,
+    IDDFS
 };

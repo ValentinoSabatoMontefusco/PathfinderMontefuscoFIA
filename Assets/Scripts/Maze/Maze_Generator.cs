@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Security.Cryptography;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
@@ -16,6 +17,7 @@ public class Maze_Generator : MonoBehaviour
     private int MazeSizeY;
     public GameObject nodeModel;
     public MazeNode[,] MazeGrid;
+    public static Action onMazeUpdate;
 
     public void Start()
     {
@@ -32,7 +34,7 @@ public class Maze_Generator : MonoBehaviour
             for (int y = 0; y < MazeSizeY; y++)
             {
                 
-                MazeGrid[x, y] = new MazeNode(bottomLeft + new Vector3(x*CellEdge + CellHE, 0, y*CellEdge + CellHE), x, y, null);
+                MazeGrid[x, y] = new MazeNode(bottomLeft + new Vector3(x*CellEdge + CellHE, 0.5f, y*CellEdge + CellHE), x, y, null);
                 MazeGrid[x, y].nodeItem = GameObject.Instantiate(nodeModel, MazeGrid[x, y].worldPos, Quaternion.identity);
 
             }
@@ -51,6 +53,9 @@ public class Maze_Generator : MonoBehaviour
         while (explored.Count != (MazeSizeX*MazeSizeY))
         {
             currentNode = frontier.Pop();
+            currentNode.MNState = MazeNodeState.Visited;
+            //currentNode.nodeItem.GetComponent<MazeCell_Behaviour>().changeFloorColor(currentNode.MNState);
+
             MazeNode nextNode = DFSMazeNeighbour(currentNode, explored);
             if (nextNode != null) {
                 nextNode.parent = currentNode;
@@ -77,10 +82,14 @@ public class Maze_Generator : MonoBehaviour
             } else
             {
                 currentNode.deadEnd = true;
+                currentNode.MNState = MazeNodeState.Completed;
+                //currentNode.nodeItem.GetComponent<MazeCell_Behaviour>().changeFloorColor(currentNode.MNState);
                 nextNode = (MazeNode) currentNode.parent;
                 while (nextNode.deadEnd != false)
                 {
+                    nextNode.MNState = MazeNodeState.Completed;
                     nextNode = (MazeNode) nextNode.parent;
+
                 }
 
             }
@@ -88,12 +97,19 @@ public class Maze_Generator : MonoBehaviour
             explored.Add(currentNode);
             frontier.Push(nextNode);
 
-            //yield return new WaitForSeconds(0.001f);
+            if (GetComponent<Pathfinding>().graphRep) yield return null;
             
 
         }
         sw.Stop();
         UnityEngine.Debug.Log("Labirinto generato in " + sw.ElapsedMilliseconds + "millisecondi");
+        foreach (MazeNode node in MazeGrid)
+        {
+            node.MNState = MazeNodeState.Clear;
+            //node.nodeItem.GetComponent<MazeCell_Behaviour>().changeFloorColor(node.MNState);
+        }
+        GetComponent<Grid>().createGrid();
+        onMazeUpdate?.Invoke();
         yield return null;
     }
 
@@ -128,6 +144,17 @@ public class Maze_Generator : MonoBehaviour
 
     }
 
+    public void DestroyMazeGrid() 
+    {
+        if (MazeGrid != null)
+        {
+            foreach (MazeNode cell in MazeGrid)
+            {
+                GameObject.Destroy(cell.nodeItem);
+            }
+        }
+        MazeGrid = null;
+    }
     public MazeNode oldDFSMazeNeighbour(MazeNode node, HashSet<MazeNode> explored)
     {
         int x;

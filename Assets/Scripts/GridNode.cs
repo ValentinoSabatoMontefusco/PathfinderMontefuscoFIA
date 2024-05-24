@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Timers;
 using UnityEngine;
+
 public enum nodeStateEnum
 {
     Unexplored,
@@ -14,18 +15,30 @@ public enum nodeStateEnum
 };
 public class GridNode : Node, IHeapItem<GridNode>, IComparable<GridNode>
 {
+    // Pathfinding helpers
+    public int movementPenalty;
     public bool walkable;
     public int g_cost;
     public int h_cost;
+    public int f_cost
+    {
+        get { return g_cost + h_cost; }
+    }
+    
+
     int heapIndex;
     //public bool deadEnd = false;
     private int gridX;
     private GameObject drawnNode;
-    private Action<float, Material> onNodeStateChange;
+    
+
+    // Grid references
     private Grid gridSource;
+    public GridNode[,] grid;
 
- 
 
+
+    private Action<float, Material> onNodeStateChange;
     private nodeStateEnum nodeState;
     public nodeStateEnum nodestate
     {
@@ -39,13 +52,16 @@ public class GridNode : Node, IHeapItem<GridNode>, IComparable<GridNode>
     }
 
 
-    public GridNode(bool walkable, Vector3 worldPos, int gridX, int gridY, Grid gridSource) : base(worldPos, gridX, gridY)
+    public GridNode(bool walkable, Vector3 worldPos, int gridX, int gridY, Grid gridSource, int movementPenalty, GridNode[,] grid ) : base(worldPos, gridX, gridY)
     {
         this.walkable = walkable;
         nodeState = nodeStateEnum.Unexplored;
         onNodeStateChange += drawNode;
         this.gridSource = gridSource;
         Pathfinding.onProcessingEnd += destroyDrawnNode;
+        this.movementPenalty = movementPenalty;
+        g_cost = int.MaxValue;
+        this.grid = grid;
     }
 
     public int HeapIndex
@@ -78,17 +94,14 @@ public class GridNode : Node, IHeapItem<GridNode>, IComparable<GridNode>
     }
 
 
-    public int f_cost
-    {
-        get { return g_cost + h_cost; }
-    }
+    
 
     public void drawNode(float nodeRadius, Material nodeMaterial)
     {
         if (drawnNode != null)
             GameObject.Destroy(drawnNode);
         drawnNode = GameObject.Instantiate(gridSource.nodePrefab, this.worldPos, Quaternion.identity);
-        drawnNode.transform.localScale = Vector3.one * nodeRadius;
+        drawnNode.transform.localScale = Vector3.one * (nodeRadius * 1.6f);
         drawnNode.GetComponent<Renderer>().material = nodeMaterial;
         Color color = Color.black;
         
@@ -100,7 +113,7 @@ public class GridNode : Node, IHeapItem<GridNode>, IComparable<GridNode>
             case nodeStateEnum.Solution: color = Color.green; break;
             case 0: color = Color.gray; break;
         }
-        color.a = 0.8f;
+        color.a = 0.3f;
         drawnNode.GetComponent<Renderer>().material.color = color;
     }
 
