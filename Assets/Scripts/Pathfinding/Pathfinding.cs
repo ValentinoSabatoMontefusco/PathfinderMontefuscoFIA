@@ -39,12 +39,52 @@ public class Pathfinding : MonoBehaviour
         }
  
      }
+
+    public static void PathFind(GridNode startNode, GridNode targetNode, GridNode[,] grid, searchAlgorithm searchAlg)  
+    {
+        Stopwatch sw = new Stopwatch(); // Valutare di separare
+        HashSet<GridNode> explored = new();
+
+        IFrontier<GridNode> frontier;
+        switch (searchAlg)
+        {
+            case searchAlgorithm.Astar:
+            case searchAlgorithm.BFGreedy:
+            case searchAlgorithm.UniformCost: frontier = new HeapFrontier(); break;
+            case searchAlgorithm.BFS: frontier = new QueueFrontier(); break;
+            case searchAlgorithm.DFS: frontier = new StackFrontier(); break;
+            default: return; //Handle error
+        }               // Use a separate method to initialize
+
+        if (!targetNode.walkable)
+            targetNode = Grid.closestWalkableNode(targetNode);
+
+        sw.Restart();
+
+        frontier.Add(startNode);
+
+        GridNode currentNode;
+
+        while (frontier.Count() > 0)
+        {
+            currentNode = frontier.Extract();
+
+            explored.Add(currentNode);
+
+            if (currentNode == targetNode)
+            {
+                sw.Stop();
+                // Send results
+            }
+
+        }
+    }
      
 
     
 
     
-    public IEnumerator AstarPathfind(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback, GridNode[,] grid)
+    public static IEnumerator AstarPathfind(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback, GridNode[,] grid)
     {
 
         Stopwatch sw = new Stopwatch();                                                 // Variabile per il tracciamento del tempo di computazione

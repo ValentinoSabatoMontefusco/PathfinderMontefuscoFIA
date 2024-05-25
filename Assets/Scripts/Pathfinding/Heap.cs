@@ -7,12 +7,12 @@ using UnityEngine;
 public class Heap<T> :ICollection where T : IHeapItem<T>
 {
 
-    T[] items;
+    List<T> items;
     private int currentItemCount = 0;
 
-    public Heap(int maxSize) {
+    public Heap() {
 
-        items = new T[maxSize];
+        items = new();
     }
 
     public void Add (T item)
