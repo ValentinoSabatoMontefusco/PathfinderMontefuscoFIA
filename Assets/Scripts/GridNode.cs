@@ -64,6 +64,14 @@ public class GridNode : Node, IHeapItem<GridNode>, IComparable<GridNode>
         this.grid = grid;
     }
 
+    public GridNode CloneNode()
+    {
+        GridNode cloneNode = new GridNode(this.walkable, this.worldPos, this.GridX, this.GridY,
+                                          this.gridSource, this.movementPenalty, this.grid);
+
+        return cloneNode;
+    }
+
     public int HeapIndex
     {
         get

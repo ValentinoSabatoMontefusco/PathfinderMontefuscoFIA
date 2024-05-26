@@ -1,0 +1,92 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\darth\\Desktop\\PathfinderMontefuscoFIA\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{045688DC-D326-6607-AE81-B52F05233800}|Assembly-CSharp.csproj|c:\\users\\darth\\desktop\\pathfindermontefuscofia\\assets\\scripts\\pathfinding\\pathfinding.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{045688DC-D326-6607-AE81-B52F05233800}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\pathfinding\\pathfinding.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{045688DC-D326-6607-AE81-B52F05233800}|Assembly-CSharp.csproj|c:\\users\\darth\\desktop\\pathfindermontefuscofia\\assets\\scripts\\pathfinding\\pfalgorightms.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{045688DC-D326-6607-AE81-B52F05233800}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\pathfinding\\pfalgorightms.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{045688DC-D326-6607-AE81-B52F05233800}|Assembly-CSharp.csproj|c:\\users\\darth\\desktop\\pathfindermontefuscofia\\assets\\scripts\\pathfinding\\grid.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{045688DC-D326-6607-AE81-B52F05233800}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\pathfinding\\grid.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{045688DC-D326-6607-AE81-B52F05233800}|Assembly-CSharp.csproj|c:\\users\\darth\\desktop\\pathfindermontefuscofia\\assets\\scripts\\gridnode.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{045688DC-D326-6607-AE81-B52F05233800}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\gridnode.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "PFAlgorightms.cs",
+              "DocumentMoniker": "C:\\Users\\darth\\Desktop\\PathfinderMontefuscoFIA\\Assets\\Scripts\\Pathfinding\\PFAlgorightms.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Pathfinding\\PFAlgorightms.cs",
+              "ToolTip": "C:\\Users\\darth\\Desktop\\PathfinderMontefuscoFIA\\Assets\\Scripts\\Pathfinding\\PFAlgorightms.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Pathfinding\\PFAlgorightms.cs",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAqwAwAAAATAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-05-25T23:08:29.687Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "GridNode.cs",
+              "DocumentMoniker": "C:\\Users\\darth\\Desktop\\PathfinderMontefuscoFIA\\Assets\\Scripts\\GridNode.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\GridNode.cs",
+              "ToolTip": "C:\\Users\\darth\\Desktop\\PathfinderMontefuscoFIA\\Assets\\Scripts\\GridNode.cs",
+              "RelativeToolTip": "Assets\\Scripts\\GridNode.cs",
+              "ViewState": "AQIAADgAAAAAAAAAAAAIwEIAAAAdAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-05-25T22:52:57.693Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Grid.cs",
+              "DocumentMoniker": "C:\\Users\\darth\\Desktop\\PathfinderMontefuscoFIA\\Assets\\Scripts\\Pathfinding\\Grid.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Pathfinding\\Grid.cs",
+              "ToolTip": "C:\\Users\\darth\\Desktop\\PathfinderMontefuscoFIA\\Assets\\Scripts\\Pathfinding\\Grid.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Pathfinding\\Grid.cs",
+              "ViewState": "AQIAAFcAAAAAAAAAAAAIwGgAAAAaAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-05-25T22:40:13.55Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Pathfinding.cs",
+              "DocumentMoniker": "C:\\Users\\darth\\Desktop\\PathfinderMontefuscoFIA\\Assets\\Scripts\\Pathfinding\\Pathfinding.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\Pathfinding\\Pathfinding.cs",
+              "ToolTip": "C:\\Users\\darth\\Desktop\\PathfinderMontefuscoFIA\\Assets\\Scripts\\Pathfinding\\Pathfinding.cs",
+              "RelativeToolTip": "Assets\\Scripts\\Pathfinding\\Pathfinding.cs",
+              "ViewState": "AQIAAGsAAAAAAAAAAAAswHkAAAANAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-05-25T21:58:20.911Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

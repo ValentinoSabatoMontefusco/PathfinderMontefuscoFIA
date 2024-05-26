@@ -13,12 +13,12 @@ public class Pathfinding : MonoBehaviour
     public static Action onProcessingEnd;
     public static bool graphRep = false;
     //public readonly float maxIterationTicks;
-    public static float maxIterationTicks =  Time.fixedDeltaTime* Stopwatch.Frequency;
+    public static float maxIterationTicks = Time.fixedDeltaTime * Stopwatch.Frequency;
     public static bool repSlowDown;
     public static float waitTime = 0.05f;
     public GameObject objective;
 
-    
+
 
     // Metodo che incamera le richieste di pathfinding e sceglie l'algoritmo opportuno cui passarle
     public static void StartPathFinding(PathRequest pathRequest)
@@ -26,7 +26,12 @@ public class Pathfinding : MonoBehaviour
         GridNode startNode = Grid.getNodeFromPoint(pathRequest.startPos, pathRequest.grid);
         GridNode targetNode = Grid.getNodeFromPoint(pathRequest.targetPos, pathRequest.grid);
 
-     
+        GridNode[,] copiedGrid = Grid.copyGrid(pathRequest.grid);
+
+        PathFind(startNode, targetNode, copiedGrid, pathRequest.searchType);
+        return;
+
+
         switch (pathRequest.searchType)
         {
             case searchAlgorithm.Astar: StartCoroutine(AstarPathfind(startNode, targetNode, pathRequest.feedback, pathRequest.grid)); break;
@@ -37,15 +42,48 @@ public class Pathfinding : MonoBehaviour
             //case searchAlgorithm.IDDFS: StartCoroutine(IDDFSPathfind(startNode, targetNode, pathRequest.feedback, pathRequest.grid)); break;
             default: UnityEngine.Debug.Log("There'z a been some prob with yer pathfounding, m8"); break; //kek
         }
- 
-     }
+
+    }
+
+    private delegate void startNodeInitialization();
+    private delegate void ExplorationPolicy(GridNode currentNode, GridNode neighbour, GridNode targetNode, IFrontier<GridNode> frontier, HashSet<GridNode> explored);
+
+    private static void AStarPolicy(GridNode currentNode, GridNode neighbour, GridNode targetNode, IFrontier<GridNode> frontier, HashSet<GridNode> explored)
+    {
+        if (!explored.Contains(neighbour) && neighbour.walkable == true)
+        {
+
+            int newCost = currentNode.g_cost + Grid.getDistance(currentNode, neighbour) + neighbour.movementPenalty;
+            if (newCost < neighbour.g_cost || !frontier.Contains(neighbour))
+            {
+                neighbour.g_cost = newCost;
+                neighbour.h_cost = Grid.getDistance(neighbour, targetNode);
+                neighbour.parent = currentNode;
+
+                if (!frontier.Contains(neighbour))
+                {
+                    frontier.Add(neighbour);
+                    if (graphRep) neighbour.nodestate = nodeStateEnum.Frontier;
+                }
+
+                else
+                {
+                    frontier.UpdateItem(neighbour);
+
+                }
+
+            }
+        }
+
+    }
+
 
     public static void PathFind(GridNode startNode, GridNode targetNode, GridNode[,] grid, searchAlgorithm searchAlg)  
     {
         Stopwatch sw = new Stopwatch(); // Valutare di separare
         HashSet<GridNode> explored = new();
-
         IFrontier<GridNode> frontier;
+
         switch (searchAlg)
         {
             case searchAlgorithm.Astar:
@@ -64,12 +102,11 @@ public class Pathfinding : MonoBehaviour
         frontier.Add(startNode);
 
         GridNode currentNode;
+        ExplorationPolicy explorationPolicy = AStarPolicy;
 
         while (frontier.Count() > 0)
         {
             currentNode = frontier.Extract();
-
-            explored.Add(currentNode);
 
             if (currentNode == targetNode)
             {
@@ -77,6 +114,12 @@ public class Pathfinding : MonoBehaviour
                 // Send results
             }
 
+            explored.Add(currentNode);
+
+            foreach (GridNode neighbour in Grid.getNeighbors(currentNode, grid))
+            {
+                explorationPolicy(currentNode, neighbour, targetNode, frontier, explored);
+            }
         }
     }
      

@@ -8,18 +8,21 @@ public interface IFrontier<T>
     void Add(T item);
     int Count();
     T Extract();
-    void updateItem(T item);
+
+    bool Contains(T item);
+    void UpdateItem(T item);
 }
 
 public class StackFrontier : IFrontier<GridNode>
 {
     private Stack<GridNode> stackFrontier;
     
+    
     public StackFrontier()
     {
         this.stackFrontier = new Stack<GridNode>();
     }
-
+    
     public void Add(GridNode node)
     {
         stackFrontier.Push(node);
@@ -35,7 +38,12 @@ public class StackFrontier : IFrontier<GridNode>
         return stackFrontier.Pop();
     }
 
-    public void updateItem(GridNode node)
+    public bool Contains(GridNode node)
+    {
+        return stackFrontier.Contains(node);
+    }
+
+    public void UpdateItem(GridNode node)
     {
         throw new System.NotImplementedException();
     }
@@ -64,7 +72,12 @@ public class QueueFrontier : IFrontier<GridNode>
         return queueFrontier.Dequeue();
     }
 
-    public void updateItem(GridNode item)
+    public bool Contains(GridNode node)
+    {
+        return queueFrontier.Contains(node);
+    }
+
+    public void UpdateItem(GridNode item)
     {
         throw new System.NotImplementedException();
     }
@@ -93,7 +106,11 @@ public class HeapFrontier : IFrontier<GridNode>
         return heapFrontier.Extract();
     }
 
-    public void updateItem(GridNode node)
+    public bool Contains(GridNode node)
+    {
+        return heapFrontier.Contains(node);
+    }
+    public void UpdateItem(GridNode node)
     {
         heapFrontier.UpdateItem(node);
     }
