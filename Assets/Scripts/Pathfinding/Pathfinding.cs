@@ -5,7 +5,7 @@ using System;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Unity.VisualScripting;
 using System.Diagnostics;
-
+using Debug = UnityEngine.Debug;
 
 public class Pathfinding : MonoBehaviour
 {
@@ -23,14 +23,20 @@ public class Pathfinding : MonoBehaviour
     // Metodo che incamera le richieste di pathfinding e sceglie l'algoritmo opportuno cui passarle
     public static void StartPathFinding(PathRequest pathRequest)
     {
+        
         GridNode startNode = Grid.getNodeFromPoint(pathRequest.startPos, pathRequest.grid);
         GridNode targetNode = Grid.getNodeFromPoint(pathRequest.targetPos, pathRequest.grid);
+        Stopwatch sw = new();
+        sw.Start();
 
-        GridNode[,] copiedGrid = Grid.copyGrid(pathRequest.grid);
-
-        List<GridNode> solutionPath = PathFind(startNode, targetNode, copiedGrid, pathRequest.searchType);
+        //GridNode[,] copiedGrid = Grid.copyGrid(pathRequest.grid);
+        sw.Stop();
+        Debug.Log("Fattapposto completato in totale in " + sw.ElapsedMilliseconds + "ms");
+        List<GridNode> solutionPath = PathFind(startNode, targetNode, pathRequest.grid, pathRequest.searchType);
         if (solutionPath != null)
             PathRequestManager.FinishedProcessing(new PathResult(pathToWaypoints(solutionPath), true, pathRequest.feedback));
+
+        
         return;
 
 
@@ -48,43 +54,78 @@ public class Pathfinding : MonoBehaviour
     }
 
     private delegate void startNodeInitialization();
-    private delegate void ExplorationPolicy(GridNode currentNode, GridNode neighbour, GridNode targetNode, IFrontier<GridNode> frontier, HashSet<GridNode> explored);
+    private delegate void ExplorationPolicy(GridNode currentNode, GridNode neighbour, GridNode targetNode, IFrontier<GridNode> frontier, HashSet<GridNode> explored, Dictionary<Tuple<int, int>, NodeCost> costTable);
 
-    private static void AStarPolicy(GridNode currentNode, GridNode neighbour, GridNode targetNode, IFrontier<GridNode> frontier, HashSet<GridNode> explored)
+    private static void AStarPolicy(GridNode currentNode, GridNode neighbour, GridNode targetNode, IFrontier<GridNode> frontier, HashSet<GridNode> explored, Dictionary<Tuple<int, int>, NodeCost> nodeTable)
     {
         if (!explored.Contains(neighbour) && neighbour.walkable == true)
         {
-
-            int newCost = currentNode.g_cost + Grid.getDistance(currentNode, neighbour) + neighbour.movementPenalty;
-            if (newCost < neighbour.g_cost || !frontier.Contains(neighbour))
+            int newCost = nodeTable[currentNode.GridXY].g_cost + Grid.getDistance(currentNode, neighbour) + neighbour.movementPenalty;
+            if (!nodeTable.ContainsKey(neighbour.GridXY) || (nodeTable.ContainsKey(neighbour.GridXY) && newCost < nodeTable[neighbour.GridXY].g_cost))
             {
-                neighbour.g_cost = newCost;
-                neighbour.h_cost = Grid.getDistance(neighbour, targetNode);
-                neighbour.parent = currentNode;
+                if (!nodeTable.ContainsKey(neighbour.GridXY))
+                {
+                    nodeTable.Add(neighbour.GridXY, new NodeCost());
+                }
+                nodeTable[neighbour.GridXY].g_cost = newCost;
+                nodeTable[neighbour.GridXY].h_cost = Grid.getDistance(neighbour, targetNode);
+                nodeTable[neighbour.GridXY].parent = currentNode;
 
                 if (!frontier.Contains(neighbour))
                 {
-                    frontier.Add(neighbour);
+                    frontier.Add(neighbour, nodeTable[neighbour.GridXY].f_cost);
                     if (graphRep) neighbour.nodestate = nodeStateEnum.Frontier;
                 }
-
                 else
                 {
-                    frontier.UpdateItem(neighbour);
-
+                    frontier.UpdateItem(neighbour, nodeTable[neighbour.GridXY].f_cost);
                 }
-
             }
+
+
+
+
+
+
+            //int newCost = currentNode.g_cost + Grid.getDistance(currentNode, neighbour) + neighbour.movementPenalty;
+            //if (newCost < neighbour.g_cost || !frontier.Contains(neighbour))
+            //{
+            //    neighbour.g_cost = newCost;
+            //    neighbour.h_cost = Grid.getDistance(neighbour, targetNode);
+            //    neighbour.parent = currentNode;
+
+            //    if (!frontier.Contains(neighbour))
+            //    {
+            //        frontier.Add(neighbour);
+            //        if (graphRep) neighbour.nodestate = nodeStateEnum.Frontier;
+            //    }
+
+            //    else
+            //    {
+            //        frontier.UpdateItem(neighbour);
+
+            //    }
+
+            //}
         }
 
     }
 
+    private class NodeCost
+    {
+        public int g_cost = 0;
+        public int h_cost = 0;
+        public int f_cost => g_cost + h_cost;
+        public GridNode parent;
+    }
 
     public static List<GridNode> PathFind(GridNode startNode, GridNode targetNode, GridNode[,] grid, searchAlgorithm searchAlg)  
     {
         Stopwatch sw = new Stopwatch(); // Valutare di separare
         HashSet<GridNode> explored = new();
         IFrontier<GridNode> frontier;
+        Dictionary<Tuple<int, int>, NodeCost> nodeTable = new();
+        
         bool heuristic = (searchAlg == searchAlgorithm.Astar || searchAlg == searchAlgorithm.BFGreedy);
 
         switch (searchAlg)
@@ -102,14 +143,17 @@ public class Pathfinding : MonoBehaviour
 
         sw.Restart();
 
-        frontier.Add(startNode);
+        
 
         GridNode currentNode;
         ExplorationPolicy explorationPolicy = AStarPolicy;
 
-        startNode.g_cost = 0;
+        //startNode.g_cost = 0;
+        nodeTable.Add(startNode.GridXY, new NodeCost());
+        nodeTable[startNode.GridXY].g_cost = 0;
         if (heuristic)
-            startNode.h_cost = Grid.getDistance(startNode, targetNode);
+            nodeTable[startNode.GridXY].h_cost = Grid.getDistance(startNode, targetNode);
+        frontier.Add(startNode, nodeTable[startNode.GridXY].f_cost);
 
 
         while (frontier.Count() > 0)
@@ -118,8 +162,11 @@ public class Pathfinding : MonoBehaviour
 
             if (currentNode == targetNode)
             {
+                
                 sw.Stop();
-                return BuildSolutionPath(startNode, targetNode);
+                UnityEngine.Debug.Log("A* path found in " + sw.ElapsedMilliseconds + "ms" +
+                    " with " + explored.Count + "nodes in Explored. " + frontier.Count() + "nodes  in Frontier.");
+                return BuildSolutionPath(startNode, targetNode, nodeTable);
                 
             }
 
@@ -127,7 +174,7 @@ public class Pathfinding : MonoBehaviour
 
             foreach (GridNode neighbour in Grid.getNeighbors(currentNode, grid))
             {
-                explorationPolicy(currentNode, neighbour, targetNode, frontier, explored);
+                explorationPolicy(currentNode, neighbour, targetNode, frontier, explored, nodeTable);
             }
         }
         return null;
@@ -137,422 +184,422 @@ public class Pathfinding : MonoBehaviour
     
 
     
-    public static IEnumerator AstarPathfind(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback, GridNode[,] grid)
-    {
+//    public static IEnumerator AstarPathfind(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback, GridNode[,] grid)
+//    {
 
-        Stopwatch sw = new Stopwatch();                                                 // Variabile per il tracciamento del tempo di computazione
-        HashSet<GridNode> explored = new HashSet<GridNode>();                           
-        Heap<GridNode> frontier = new Heap<GridNode>();               // Frontiera implementata tramite min-coda a priorità
+//        Stopwatch sw = new Stopwatch();                                                 // Variabile per il tracciamento del tempo di computazione
+//        HashSet<GridNode> explored = new HashSet<GridNode>();                           
+//        Heap<GridNode> frontier = new Heap<GridNode>();               // Frontiera implementata tramite min-coda a priorità
 
-        if (!targetNode.walkable)                                                       // Ricerca BFS del più vicino nodo percorribile se quello di
-            targetNode = Grid.closestWalkableNode(targetNode);                    // destinazione scelto non lo è
+//        if (!targetNode.walkable)                                                       // Ricerca BFS del più vicino nodo percorribile se quello di
+//            targetNode = Grid.closestWalkableNode(targetNode);                    // destinazione scelto non lo è
 
-        sw.Restart();
-        float frameStartTicks = sw.ElapsedTicks;
+//        sw.Restart();
+//        float frameStartTicks = sw.ElapsedTicks;
 
-        startNode.g_cost = 0;
-        frontier.Add(startNode);                                                        // Inizializzazione della frontiera col nodo di partenza
+//        startNode.g_cost = 0;
+//        frontier.Add(startNode);                                                        // Inizializzazione della frontiera col nodo di partenza
 
-        while (frontier.Count > 0)
-        {
+//        while (frontier.Count > 0)
+//        {
 
-            GridNode currentNode = frontier.Extract();                                  // Pop del nodo a f_costo minimo
-            if (graphRep) currentNode.nodestate = nodeStateEnum.Current;
+//            GridNode currentNode = frontier.Extract();                                  // Pop del nodo a f_costo minimo
+//            if (graphRep) currentNode.nodestate = nodeStateEnum.Current;
 
-            explored.Add(currentNode);                                                  // Aggiunta del nodo corrente agli esplorati
+//            explored.Add(currentNode);                                                  // Aggiunta del nodo corrente agli esplorati
            
 
-            if (currentNode == targetNode)                                              // Risoluzione 
-            {
-                sw.Stop();
-                UnityEngine.Debug.Log("A* path found in " + sw.ElapsedMilliseconds + "ms" + 
-                    " with " + explored.Count + "nodes in Explored. " + frontier.Count + "nodes  in Frontier.");
-                yield return PathFoundRoutine(startNode, targetNode, feedback);
-                yield break;
-            }
+//            if (currentNode == targetNode)                                              // Risoluzione 
+//            {
+//                sw.Stop();
+//                UnityEngine.Debug.Log("A* path found in " + sw.ElapsedMilliseconds + "ms" + 
+//                    " with " + explored.Count + "nodes in Explored. " + frontier.Count + "nodes  in Frontier.");
+//                yield return PathFoundRoutine(startNode, targetNode, feedback);
+//                yield break;
+//            }
 
             
-            foreach (GridNode neighbour in Grid.getNeighbors(currentNode, grid))
-            {
-                if (!explored.Contains(neighbour) && neighbour.walkable == true)
-                {
+//            foreach (GridNode neighbour in Grid.getNeighbors(currentNode, grid))
+//            {
+//                if (!explored.Contains(neighbour) && neighbour.walkable == true)
+//                {
 
-                    int newCost = currentNode.g_cost + Grid.getDistance(currentNode, neighbour) + neighbour.movementPenalty;
-                    if (newCost < neighbour.g_cost || !frontier.Contains(neighbour))
-                    {
-                        neighbour.g_cost = newCost;
-                        neighbour.h_cost = Grid.getDistance(neighbour, targetNode);
-                        neighbour.parent = currentNode;
+//                    int newCost = currentNode.g_cost + Grid.getDistance(currentNode, neighbour) + neighbour.movementPenalty;
+//                    if (newCost < neighbour.g_cost || !frontier.Contains(neighbour))
+//                    {
+//                        neighbour.g_cost = newCost;
+//                        neighbour.h_cost = Grid.getDistance(neighbour, targetNode);
+//                        neighbour.parent = currentNode;
 
-                    if (!frontier.Contains(neighbour))
-                        {
-                            frontier.Add(neighbour);
-                            if (graphRep) neighbour.nodestate = nodeStateEnum.Frontier;
-                        }
+//                    if (!frontier.Contains(neighbour))
+//                        {
+//                            frontier.Add(neighbour);
+//                            if (graphRep) neighbour.nodestate = nodeStateEnum.Frontier;
+//                        }
 
-                        else
-                        {
-                            frontier.UpdateItem(neighbour);
+//                        else
+//                        {
+//                            frontier.UpdateItem(neighbour);
 
-                        }
+//                        }
 
-                    }
-                }
+//                    }
+//                }
 
-            }
-            if (graphRep)
-            {
-                currentNode.nodestate = nodeStateEnum.Explored;
-                //yield return null;
-            }
+//            }
+//            if (graphRep)
+//            {
+//                currentNode.nodestate = nodeStateEnum.Explored;
+//                //yield return null;
+//            }
 
-            if ((sw.ElapsedTicks - frameStartTicks) > maxIterationTicks)
-            {
-                yield return null;
-                frameStartTicks = sw.ElapsedTicks;
-                //framesElasped++;
-            }
+//            if ((sw.ElapsedTicks - frameStartTicks) > maxIterationTicks)
+//            {
+//                yield return null;
+//                frameStartTicks = sw.ElapsedTicks;
+//                //framesElasped++;
+//            }
 
-            if (graphRep)
-                if (repSlowDown)
-                    yield return new WaitForSeconds(waitTime);
-                //else
-                //    yield return null;
-        }
+//            if (graphRep)
+//                if (repSlowDown)
+//                    yield return new WaitForSeconds(waitTime);
+//                //else
+//                //    yield return null;
+//        }
 
-        PathRequestManager.FinishedProcessing(new PathResult(null, false, null));
-            yield return null;
+//        PathRequestManager.FinishedProcessing(new PathResult(null, false, null));
+//            yield return null;
     
-}
+//}
 
-    public IEnumerator DFSPathfind(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback, GridNode[,] grid)
-    {
+//    public IEnumerator DFSPathfind(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback, GridNode[,] grid)
+//    {
 
         
-        if (!targetNode.walkable)
-        {
-            targetNode = Grid.closestWalkableNode(targetNode);
-        }
+//        if (!targetNode.walkable)
+//        {
+//            targetNode = Grid.closestWalkableNode(targetNode);
+//        }
 
-        Stack<GridNode> frontier = new Stack<GridNode>();
-        HashSet<GridNode> explored = new HashSet<GridNode>();
-        Stopwatch sw = new Stopwatch();
-        GridNode currentNode;
+//        Stack<GridNode> frontier = new Stack<GridNode>();
+//        HashSet<GridNode> explored = new HashSet<GridNode>();
+//        Stopwatch sw = new Stopwatch();
+//        GridNode currentNode;
         
 
         
        
-        sw.Restart();
-        float frameStartTicks = sw.ElapsedTicks;
+//        sw.Restart();
+//        float frameStartTicks = sw.ElapsedTicks;
 
-        frontier.Push(startNode);
-        int framesElasped = 0;
+//        frontier.Push(startNode);
+//        int framesElasped = 0;
 
 
-        while (frontier.Count > 0)
-        {
+//        while (frontier.Count > 0)
+//        {
 
-            currentNode = frontier.Pop();
-            if (graphRep) currentNode.nodestate = nodeStateEnum.Frontier;
+//            currentNode = frontier.Pop();
+//            if (graphRep) currentNode.nodestate = nodeStateEnum.Frontier;
 
-            if (currentNode == targetNode)
-            {
-                sw.Stop();
-                UnityEngine.Debug.Log("DFS path found in " + sw.ElapsedMilliseconds + "ms" + " with " + explored.Count + "in Explored. "
-                    + frontier.Count + " nodes in Frontier. " + framesElasped.ToString() + " frames worked with.");
-                yield return PathFoundRoutine(startNode, targetNode, feedback);
-                yield break;
+//            if (currentNode == targetNode)
+//            {
+//                sw.Stop();
+//                UnityEngine.Debug.Log("DFS path found in " + sw.ElapsedMilliseconds + "ms" + " with " + explored.Count + "in Explored. "
+//                    + frontier.Count + " nodes in Frontier. " + framesElasped.ToString() + " frames worked with.");
+//                yield return PathFoundRoutine(startNode, targetNode, feedback);
+//                yield break;
 
-            }
-            explored.Add(currentNode);
+//            }
+//            explored.Add(currentNode);
             
 
-            foreach (GridNode neighbor in Grid.GetOrtogonalNeighbors(currentNode, grid))
+//            foreach (GridNode neighbor in Grid.GetOrtogonalNeighbors(currentNode, grid))
 
-            {
-                //bool deadEnd = true;
+//            {
+//                //bool deadEnd = true;
 
-                if (!explored.Contains(neighbor) && !frontier.Contains(neighbor) && neighbor.walkable)
-                {
-                    neighbor.parent = currentNode;
-                    if (graphRep) neighbor.nodestate = nodeStateEnum.Frontier;
-                    frontier.Push(neighbor);
-                    //deadEnd = false;
-                }
+//                if (!explored.Contains(neighbor) && !frontier.Contains(neighbor) && neighbor.walkable)
+//                {
+//                    neighbor.parent = currentNode;
+//                    if (graphRep) neighbor.nodestate = nodeStateEnum.Frontier;
+//                    frontier.Push(neighbor);
+//                    //deadEnd = false;
+//                }
 
-                //if (deadEnd) { }
-
-
-            }
-            if (graphRep) currentNode.nodestate = nodeStateEnum.Explored;
-
-            if ((sw.ElapsedTicks - frameStartTicks) > maxIterationTicks)
-            {
-                yield return null;
-                frameStartTicks = sw.ElapsedTicks;
-                framesElasped++;
-            }
-            if (graphRep)
-                if (repSlowDown)
-                    yield return new WaitForSeconds(waitTime);
-                //else
-                //    yield return null;
-
-        }
-
-        PathRequestManager.FinishedProcessing(new PathResult(new Vector3[0], false, feedback));
-        yield return null;
-
-    }
-    public IEnumerator BFSPathfind(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback, GridNode[,] grid)
-    {
+//                //if (deadEnd) { }
 
 
-        if (!targetNode.walkable)
-        {
-            targetNode = Grid.closestWalkableNode(targetNode);
-        }
+//            }
+//            if (graphRep) currentNode.nodestate = nodeStateEnum.Explored;
 
-        Queue<GridNode> frontier = new Queue<GridNode>();
-        HashSet<GridNode> explored = new HashSet<GridNode>();
-        Stopwatch sw = new Stopwatch();
-        GridNode currentNode;
+//            if ((sw.ElapsedTicks - frameStartTicks) > maxIterationTicks)
+//            {
+//                yield return null;
+//                frameStartTicks = sw.ElapsedTicks;
+//                framesElasped++;
+//            }
+//            if (graphRep)
+//                if (repSlowDown)
+//                    yield return new WaitForSeconds(waitTime);
+//                //else
+//                //    yield return null;
+
+//        }
+
+//        PathRequestManager.FinishedProcessing(new PathResult(new Vector3[0], false, feedback));
+//        yield return null;
+
+//    }
+//    public IEnumerator BFSPathfind(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback, GridNode[,] grid)
+//    {
 
 
-        sw.Restart();
-        float frameStartTicks = sw.ElapsedTicks;
+//        if (!targetNode.walkable)
+//        {
+//            targetNode = Grid.closestWalkableNode(targetNode);
+//        }
 
-        frontier.Enqueue(startNode);
+//        Queue<GridNode> frontier = new Queue<GridNode>();
+//        HashSet<GridNode> explored = new HashSet<GridNode>();
+//        Stopwatch sw = new Stopwatch();
+//        GridNode currentNode;
 
 
-        while (frontier.Count > 0)
-        {
-            currentNode = frontier.Dequeue();
-            if (graphRep) currentNode.nodestate = nodeStateEnum.Current;
+//        sw.Restart();
+//        float frameStartTicks = sw.ElapsedTicks;
 
-            if (currentNode == targetNode)
-            {
-                sw.Stop();
-                UnityEngine.Debug.Log("BFS path found in " + sw.ElapsedMilliseconds + "ms" + " with " + explored.Count + "nodes in Explored. " + frontier.Count + " in Frontier.");
-                yield return PathFoundRoutine(startNode, targetNode, feedback);
-                yield break;
+//        frontier.Enqueue(startNode);
 
-            }
-            explored.Add(currentNode);
+
+//        while (frontier.Count > 0)
+//        {
+//            currentNode = frontier.Dequeue();
+//            if (graphRep) currentNode.nodestate = nodeStateEnum.Current;
+
+//            if (currentNode == targetNode)
+//            {
+//                sw.Stop();
+//                UnityEngine.Debug.Log("BFS path found in " + sw.ElapsedMilliseconds + "ms" + " with " + explored.Count + "nodes in Explored. " + frontier.Count + " in Frontier.");
+//                yield return PathFoundRoutine(startNode, targetNode, feedback);
+//                yield break;
+
+//            }
+//            explored.Add(currentNode);
             
 
-            foreach (GridNode neighbor in Grid.GetOrtogonalNeighbors(currentNode, grid))
+//            foreach (GridNode neighbor in Grid.GetOrtogonalNeighbors(currentNode, grid))
 
-            {
+//            {
 
-                if (!explored.Contains(neighbor) && !frontier.Contains(neighbor) && neighbor.walkable)
-                {
-                    neighbor.parent = currentNode;
-                    frontier.Enqueue(neighbor);
-                    if (graphRep) neighbor.nodestate = nodeStateEnum.Frontier;
+//                if (!explored.Contains(neighbor) && !frontier.Contains(neighbor) && neighbor.walkable)
+//                {
+//                    neighbor.parent = currentNode;
+//                    frontier.Enqueue(neighbor);
+//                    if (graphRep) neighbor.nodestate = nodeStateEnum.Frontier;
 
-                }
+//                }
 
-            }
-            if (graphRep)
-            {
-                currentNode.nodestate = nodeStateEnum.Explored;
+//            }
+//            if (graphRep)
+//            {
+//                currentNode.nodestate = nodeStateEnum.Explored;
 
-            }
+//            }
 
-            if ((sw.ElapsedTicks - frameStartTicks) > maxIterationTicks)
-            {
-                yield return null;
-                frameStartTicks = sw.ElapsedTicks;
-                //framesElasped++;
-            }
-            if (graphRep)
-                if (repSlowDown)
-                    yield return new WaitForSeconds(waitTime);
-                //else
-                //    yield return null;
-        }
+//            if ((sw.ElapsedTicks - frameStartTicks) > maxIterationTicks)
+//            {
+//                yield return null;
+//                frameStartTicks = sw.ElapsedTicks;
+//                //framesElasped++;
+//            }
+//            if (graphRep)
+//                if (repSlowDown)
+//                    yield return new WaitForSeconds(waitTime);
+//                //else
+//                //    yield return null;
+//        }
 
-        PathRequestManager.FinishedProcessing(new PathResult(null, false, null));
-        yield return null;
-
-
-    }
-    public IEnumerator BFGreedyPathfind(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback, GridNode[,] grid)
-    {
-        HashSet<GridNode> explored = new HashSet<GridNode>();
-        Heap<GridNode> frontier = new Heap<GridNode>();
-        Stopwatch sw = new Stopwatch();
-        sw.Restart();
-        float frameStartTicks = sw.ElapsedTicks;
+//        PathRequestManager.FinishedProcessing(new PathResult(null, false, null));
+//        yield return null;
 
 
-
-        if (!targetNode.walkable)
-            targetNode = Grid.closestWalkableNode(targetNode);
-
-        startNode.h_cost = Grid.getDistance(startNode, targetNode);
-        frontier.Add(startNode);
-
-        while (frontier.Count > 0)
-        {
-
-            GridNode currentNode = frontier.Extract();
-            if (graphRep) currentNode.nodestate = nodeStateEnum.Current;
+//    }
+//    public IEnumerator BFGreedyPathfind(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback, GridNode[,] grid)
+//    {
+//        HashSet<GridNode> explored = new HashSet<GridNode>();
+//        Heap<GridNode> frontier = new Heap<GridNode>();
+//        Stopwatch sw = new Stopwatch();
+//        sw.Restart();
+//        float frameStartTicks = sw.ElapsedTicks;
 
 
 
-            if (currentNode == targetNode)
-            {
-                sw.Stop();
-                UnityEngine.Debug.Log("Best First Greedy path found in " + sw.ElapsedMilliseconds + "ms" + " with " + explored.Count + "nodes in Explored. " + frontier.Count + "nodes  in Frontier.");
-                yield return PathFoundRoutine(startNode, targetNode, feedback);
-                yield break;
+//        if (!targetNode.walkable)
+//            targetNode = Grid.closestWalkableNode(targetNode);
+
+//        startNode.h_cost = Grid.getDistance(startNode, targetNode);
+//        frontier.Add(startNode);
+
+//        while (frontier.Count > 0)
+//        {
+
+//            GridNode currentNode = frontier.Extract();
+//            if (graphRep) currentNode.nodestate = nodeStateEnum.Current;
 
 
-            }
-            explored.Add(currentNode);
+
+//            if (currentNode == targetNode)
+//            {
+//                sw.Stop();
+//                UnityEngine.Debug.Log("Best First Greedy path found in " + sw.ElapsedMilliseconds + "ms" + " with " + explored.Count + "nodes in Explored. " + frontier.Count + "nodes  in Frontier.");
+//                yield return PathFoundRoutine(startNode, targetNode, feedback);
+//                yield break;
+
+
+//            }
+//            explored.Add(currentNode);
          
 
-            if ((sw.ElapsedTicks - frameStartTicks) > maxIterationTicks)
-            {
-                yield return null;
-                frameStartTicks = sw.ElapsedTicks;
-                //framesElasped++;
-            }
+//            if ((sw.ElapsedTicks - frameStartTicks) > maxIterationTicks)
+//            {
+//                yield return null;
+//                frameStartTicks = sw.ElapsedTicks;
+//                //framesElasped++;
+//            }
 
-            List<GridNode> neighbors = Grid.getNeighbors(currentNode, grid);
-            foreach (GridNode neighbor in neighbors)
-            {
-                if (!explored.Contains(neighbor) && neighbor.walkable == true)
-                {
-
-
-                    if (!frontier.Contains(neighbor))
-                    {
-                        neighbor.g_cost = 0;
-                        neighbor.h_cost = Grid.getDistance(neighbor, targetNode);
-                        neighbor.parent = currentNode;
-                        frontier.Add(neighbor);
-                        if (graphRep) neighbor.nodestate = nodeStateEnum.Frontier;
-
-                    }
+//            List<GridNode> neighbors = Grid.getNeighbors(currentNode, grid);
+//            foreach (GridNode neighbor in neighbors)
+//            {
+//                if (!explored.Contains(neighbor) && neighbor.walkable == true)
+//                {
 
 
-                }
+//                    if (!frontier.Contains(neighbor))
+//                    {
+//                        neighbor.g_cost = 0;
+//                        neighbor.h_cost = Grid.getDistance(neighbor, targetNode);
+//                        neighbor.parent = currentNode;
+//                        frontier.Add(neighbor);
+//                        if (graphRep) neighbor.nodestate = nodeStateEnum.Frontier;
+
+//                    }
+
+
+//                }
 
                
-            }
-            if (graphRep)
-            {
-                currentNode.nodestate = nodeStateEnum.Explored;
-            }
-            if (graphRep)
-                if (repSlowDown)
-                    yield return new WaitForSeconds(waitTime);
-            //else
-            //    yield return null;
+//            }
+//            if (graphRep)
+//            {
+//                currentNode.nodestate = nodeStateEnum.Explored;
+//            }
+//            if (graphRep)
+//                if (repSlowDown)
+//                    yield return new WaitForSeconds(waitTime);
+//            //else
+//            //    yield return null;
 
-        }
+//        }
 
-        PathRequestManager.FinishedProcessing(new PathResult(null, false, null));
-        yield return null;
-    }
-    public IEnumerator UniformCostPathfind(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback, GridNode[,] grid)
-    {
+//        PathRequestManager.FinishedProcessing(new PathResult(null, false, null));
+//        yield return null;
+//    }
+//    public IEnumerator UniformCostPathfind(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback, GridNode[,] grid)
+//    {
 
-        Stopwatch sw = new Stopwatch();
-        HashSet<GridNode> explored = new HashSet<GridNode>();
-        Heap<GridNode> frontier = new Heap<GridNode>();
-
-
-        if (!targetNode.walkable)
-            targetNode = Grid.closestWalkableNode(targetNode);
-
-        sw.Restart();
-        float frameStartTicks = sw.ElapsedTicks;
-
-        startNode.g_cost = 0;
-        frontier.Add(startNode);
-
-        while (frontier.Count > 0)
-        {
-
-            GridNode currentNode = frontier.Extract();
-            if (graphRep) currentNode.nodestate = nodeStateEnum.Current;
-
-            explored.Add(currentNode);
+//        Stopwatch sw = new Stopwatch();
+//        HashSet<GridNode> explored = new HashSet<GridNode>();
+//        Heap<GridNode> frontier = new Heap<GridNode>();
 
 
-            if (currentNode == targetNode)
-            {
-                sw.Stop();
-                UnityEngine.Debug.Log("Uniform Cost path found in " + sw.ElapsedMilliseconds + "ms" +
-                    " with " + explored.Count + "nodes in Explored. " + frontier.Count + "nodes  in Frontier.");
-                yield return PathFoundRoutine(startNode, targetNode, feedback);
-                yield break;
-            }
+//        if (!targetNode.walkable)
+//            targetNode = Grid.closestWalkableNode(targetNode);
+
+//        sw.Restart();
+//        float frameStartTicks = sw.ElapsedTicks;
+
+//        startNode.g_cost = 0;
+//        frontier.Add(startNode);
+
+//        while (frontier.Count > 0)
+//        {
+
+//            GridNode currentNode = frontier.Extract();
+//            if (graphRep) currentNode.nodestate = nodeStateEnum.Current;
+
+//            explored.Add(currentNode);
 
 
-            foreach (GridNode neighbour in Grid.getNeighbors(currentNode, grid))
-            {
-                if (!explored.Contains(neighbour) && neighbour.walkable == true)
-                {
-
-                    int newCost = currentNode.g_cost + Grid.getDistance(currentNode, neighbour) + neighbour.movementPenalty;
-                    if (newCost < neighbour.g_cost || !frontier.Contains(neighbour))
-                    {
-                        neighbour.g_cost = newCost;
-                        neighbour.parent = currentNode;
-
-                        if (!frontier.Contains(neighbour))
-                        {
-                            frontier.Add(neighbour);
-                            if (graphRep) neighbour.nodestate = nodeStateEnum.Frontier;
-                        }
-
-                        else
-                        {
-                            frontier.UpdateItem(neighbour);
-
-                        }
-
-                    }
-                }
+//            if (currentNode == targetNode)
+//            {
+//                sw.Stop();
+//                UnityEngine.Debug.Log("Uniform Cost path found in " + sw.ElapsedMilliseconds + "ms" +
+//                    " with " + explored.Count + "nodes in Explored. " + frontier.Count + "nodes  in Frontier.");
+//                yield return PathFoundRoutine(startNode, targetNode, feedback);
+//                yield break;
+//            }
 
 
+//            foreach (GridNode neighbour in Grid.getNeighbors(currentNode, grid))
+//            {
+//                if (!explored.Contains(neighbour) && neighbour.walkable == true)
+//                {
+
+//                    int newCost = currentNode.g_cost + Grid.getDistance(currentNode, neighbour) + neighbour.movementPenalty;
+//                    if (newCost < neighbour.g_cost || !frontier.Contains(neighbour))
+//                    {
+//                        neighbour.g_cost = newCost;
+//                        neighbour.parent = currentNode;
+
+//                        if (!frontier.Contains(neighbour))
+//                        {
+//                            frontier.Add(neighbour);
+//                            if (graphRep) neighbour.nodestate = nodeStateEnum.Frontier;
+//                        }
+
+//                        else
+//                        {
+//                            frontier.UpdateItem(neighbour);
+
+//                        }
+
+//                    }
+//                }
 
 
 
 
-            }
-            if (graphRep)
-            {
-                currentNode.nodestate = nodeStateEnum.Explored;
-                //yield return null;
-            }
 
-            if ((sw.ElapsedTicks - frameStartTicks) > maxIterationTicks)
-            {
-                yield return null;
-                frameStartTicks = sw.ElapsedTicks;
-                //framesElasped++;
-            }
-            if (graphRep)
-                if (repSlowDown)
-                    yield return new WaitForSeconds(waitTime);
-                //else
-                //    yield return null;
-        }
 
-        PathRequestManager.FinishedProcessing(new PathResult(null, false, null));
-        yield return null;
+//            }
+//            if (graphRep)
+//            {
+//                currentNode.nodestate = nodeStateEnum.Explored;
+//                //yield return null;
+//            }
 
-    }
+//            if ((sw.ElapsedTicks - frameStartTicks) > maxIterationTicks)
+//            {
+//                yield return null;
+//                frameStartTicks = sw.ElapsedTicks;
+//                //framesElasped++;
+//            }
+//            if (graphRep)
+//                if (repSlowDown)
+//                    yield return new WaitForSeconds(waitTime);
+//                //else
+//                //    yield return null;
+//        }
+
+//        PathRequestManager.FinishedProcessing(new PathResult(null, false, null));
+//        yield return null;
+
+//    }
    
     public static IEnumerator PathFoundRoutine(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback)
     {
-        List<GridNode> path = BuildSolutionPath(startNode, targetNode);
+        List<GridNode> path = BuildSolutionPath(startNode, targetNode, null);
         //Grid.path = path;
         PathRequestManager.FinishedProcessing(new PathResult(pathToWaypoints(path), true, feedback));
         if (graphRep)
@@ -563,7 +610,7 @@ public class Pathfinding : MonoBehaviour
 
     }
 
-    public static List<GridNode> BuildSolutionPath(GridNode eldest, GridNode youngest)
+    private static List<GridNode> BuildSolutionPath(GridNode eldest, GridNode youngest, Dictionary<Tuple<int, int>, NodeCost> nodeTable)
     {
 
         List<GridNode> path = new List<GridNode>();
@@ -574,10 +621,10 @@ public class Pathfinding : MonoBehaviour
 
         while (currentNode != eldest)
         {
-            path.Add((GridNode)currentNode.parent);
+            path.Add(nodeTable[currentNode.GridXY].parent);
             if (graphRep)
                 currentNode.nodestate = nodeStateEnum.Solution;
-            currentNode = (GridNode)currentNode.parent;
+            currentNode = nodeTable[currentNode.GridXY].parent;
 
         }
 

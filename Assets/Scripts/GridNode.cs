@@ -28,7 +28,7 @@ public class GridNode : Node, IHeapItem<GridNode>, IComparable<GridNode>
 
     int heapIndex;
     //public bool deadEnd = false;
-    private int gridX;
+    public Tuple<int, int> GridXY { get { return Tuple.Create(GridX, GridY); } }
     private GameObject drawnNode;
     
 

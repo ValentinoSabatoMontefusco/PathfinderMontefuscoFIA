@@ -6,11 +6,12 @@ public interface IFrontier<T>
 {
     
     void Add(T item);
+    void Add(T item, int value);
     int Count();
     T Extract();
 
     bool Contains(T item);
-    void UpdateItem(T item);
+    void UpdateItem(T item, int value);
 }
 
 public class StackFrontier : IFrontier<GridNode>
@@ -43,7 +44,12 @@ public class StackFrontier : IFrontier<GridNode>
         return stackFrontier.Contains(node);
     }
 
-    public void UpdateItem(GridNode node)
+    public void Add(GridNode item, int value)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void UpdateItem(GridNode item, int value)
     {
         throw new System.NotImplementedException();
     }
@@ -77,7 +83,12 @@ public class QueueFrontier : IFrontier<GridNode>
         return queueFrontier.Contains(node);
     }
 
-    public void UpdateItem(GridNode item)
+    public void Add(GridNode item, int value)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void UpdateItem(GridNode item, int value)
     {
         throw new System.NotImplementedException();
     }
@@ -93,8 +104,14 @@ public class HeapFrontier : IFrontier<GridNode>
 
     public void Add(GridNode node)
     {
-        heapFrontier.Add(node);
+        throw new System.NotImplementedException();
     }
+
+    public void Add(GridNode node, int value)
+    {
+        heapFrontier.Add(node, value);
+    }
+
 
     public int Count()
     {
@@ -110,8 +127,9 @@ public class HeapFrontier : IFrontier<GridNode>
     {
         return heapFrontier.Contains(node);
     }
-    public void UpdateItem(GridNode node)
+    public void UpdateItem(GridNode node, int value)
     {
-        heapFrontier.UpdateItem(node);
+        heapFrontier.UpdateItem(node, value);
+
     }
 }

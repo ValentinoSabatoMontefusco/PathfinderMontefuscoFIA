@@ -4,92 +4,156 @@ using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 
-public class Heap<T> :ICollection where T : IHeapItem<T>
+public class Heap<T> : ICollection where T : IHeapItem<T>
 {
+    //List<T> items;
+    private class Entry
+    {
+        public T item;
+        public int value;
 
-    List<T> items;
+        public Entry(T item, int value)
+        {
+            this.item = item;
+            this.value = value;
+        }
+    }
+
+    Entry[] entries;
     private int currentItemCount = 0;
+    static int maxSize= 150*150;
 
     public Heap() {
 
-        items = new();
+        entries = new Entry[maxSize];
     }
 
-    public void Add (T item)
+    public void Add (T item, int value)
     {
         item.HeapIndex = currentItemCount;
-        items[currentItemCount] = item;
-        Sortup(item);
+        
+        //items.Add(item);
+        entries[currentItemCount] = new Entry(item, value); 
+        Sortup(entries[item.HeapIndex]);
         currentItemCount++;
 
     }
 
-    public void Sortup(T item)
+    private void Sortup(Entry entry)
     {
-        int parentIndex = (item.HeapIndex - 1) / 2;
 
-        while (item.CompareTo(items[parentIndex]) > 0)
+        int index = entry.item.HeapIndex;
+
+        while (index > 0)
         {
-            Swap(item, items[parentIndex]);
-            parentIndex = (item.HeapIndex - 1) / 2;
+            int parentIndex = (index - 1) / 2;
+
+            if (entry.value >= entries[parentIndex].value)
+                break;
+
+            Swap(index, parentIndex);
+            index = parentIndex;
         }
+
+
+        //int parentIndex = (entry.item.HeapIndex - 1) / 2;
+
+        //while (entry.value < entries[parentIndex].value)
+        //{
+        //    Swap(entry, entries[parentIndex]);
+        //    parentIndex = (entry.item.HeapIndex - 1) / 2;
+        //}
 
         
     }
 
-    public void UpdateItem(T item)
+    public void UpdateItem(T item, int value)
     {
-        Sortup(item);
+        entries[item.HeapIndex].value = value;
+        Sortup(entries[item.HeapIndex]);
+
     }
 
     public T Extract()
     {
-        T firstItem = items[0];
+        if (currentItemCount == 0)
+            throw new InvalidOperationException();
+
+        T firstItem = entries[0].item;
         currentItemCount--;
-        items[0] = items[currentItemCount];
-        items[0].HeapIndex = 0;
-        Sortdown(items[0]);
+        entries[0] = entries[currentItemCount];
+        entries[0].item.HeapIndex = 0;
+        Sortdown(entries[0]);
 
 
         return firstItem;
     }
 
-    public void Sortdown(T item)
-    {
+        private void Sortdown(Entry entry)
+        {
+        int index = entry.item.HeapIndex;
         int leftChildIndex;
         int rightChildIndex;
+
         int swapIndex;
 
         while (true)
         {
-            leftChildIndex = item.HeapIndex * 2 + 1;
-            rightChildIndex = item.HeapIndex * 2 + 2;
-            swapIndex = 0;
+            leftChildIndex = index * 2 + 1;
+            rightChildIndex = index * 2 + 2;
+            swapIndex = index;
 
-            if (leftChildIndex < currentItemCount)
-            {
+            if (leftChildIndex < currentItemCount && entries[leftChildIndex].value < entries[swapIndex].value)
                 swapIndex = leftChildIndex;
-                if (rightChildIndex < currentItemCount)
-                    if (items[leftChildIndex].CompareTo(items[rightChildIndex]) < 0)
-                        swapIndex = rightChildIndex;
 
-                if (item.CompareTo(items[swapIndex]) < 0)
-                    Swap(item, items[swapIndex]);
-                else
-                    return;
-            }
-            else
-                return;
+            if (rightChildIndex < currentItemCount && entries[leftChildIndex].value < entries[swapIndex].value)
+                swapIndex = rightChildIndex;
+
+            if (swapIndex == index)
+                break;
+
+            Swap(index, swapIndex);
+            index = swapIndex;
+
+            //if (leftChildIndex < currentItemCount)
+            //{
+            //    swapIndex = leftChildIndex;
+            //    if (rightChildIndex < currentItemCount)
+            //        if (entries[leftChildIndex].value > entries[rightChildIndex].value)
+            //            swapIndex = rightChildIndex;
+
+            //    if (entry.value > entries[swapIndex].value)
+            //        Swap(entry, entries[swapIndex]);
+            //    else
+            //        return;
+            //}
+            //else
+            //    return;
 
             
             
         }
 
     }
+    private void Swap(int index1, int index2)
+    {
+        Entry temp = entries[index1];
+        entries[index1] = entries[index2];
+        entries[index2] = temp;
+        entries[index1].item.HeapIndex = index1;
+        entries[index2].item.HeapIndex = index2;        
+        
+        //entries[pair1.item.HeapIndex] = pair2;
+        //entries[pair2.item.HeapIndex] = pair1;
+        //int tempIndex = pair1.item.HeapIndex;
+        //pair1.item.HeapIndex = pair2.item.HeapIndex;
+        //pair2.item.HeapIndex = tempIndex;
+
+    }
 
     public bool Contains (T item)                           // ???????
     {
-        return Equals(items[item.HeapIndex], item);
+        return Equals(entries[item.HeapIndex], item);
 
     }
     
@@ -105,15 +169,7 @@ public class Heap<T> :ICollection where T : IHeapItem<T>
 
     public object SyncRoot => throw new NotImplementedException();
 
-    public void Swap (T item1, T item2)
-    {
-        items[item1.HeapIndex] = item2;
-        items[item2.HeapIndex] = item1;
-        int tempIndex = item1.HeapIndex;
-        item1.HeapIndex = item2.HeapIndex;
-        item2.HeapIndex = tempIndex;
-
-    }
+    
 
     public void CopyTo(Array a, int n)
     {
