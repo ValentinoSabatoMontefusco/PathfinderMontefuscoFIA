@@ -1771,9 +1771,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 09ef92e2d89c5f843b3cab6308c00ed3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  navigationSpeed: 2.4
-  shiftMultiplier: 2
-  sensitivity: 1
 --- !u!1 &997311454
 GameObject:
   m_ObjectHideFlags: 0
@@ -2632,6 +2629,30 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1433199302}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1496663769 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8563024770582108803, guid: b955c20bb36c76f43bbc74ea37877ddd, type: 3}
+  m_PrefabInstance: {fileID: 949656260560366630}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1496663773
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1496663769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd023771730481e4db39d7ad5e51fb4f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pathfindingReference: {fileID: 2070629653}
+  moveSpeed: 10
+  isSelected: 0
+  searchType: 2
+  slowerMask:
+    serializedVersion: 2
+    m_Bits: 64
 --- !u!1 &1585605173
 GameObject:
   m_ObjectHideFlags: 0
@@ -3662,7 +3683,6 @@ GameObject:
   - component: {fileID: 2070629654}
   - component: {fileID: 2070629656}
   - component: {fileID: 2070629657}
-  - component: {fileID: 2070629658}
   - component: {fileID: 2070629659}
   m_Layer: 0
   m_Name: PathfindingController
@@ -3683,7 +3703,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b547e4d343d700c438c4e9c1d1b15851, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gridWorldSize: {x: 50, y: 50}
+  nodeMaterial: {fileID: 2100000, guid: 1bb9ea6dc96303048870a4320ea08ead, type: 2}
+  nodePrefab: {fileID: 1770718188855582463, guid: fd1506918122ef649af9383bca73f3f6, type: 3}
   nodeRadius: 0.33
   unwalkableLayer:
     serializedVersion: 2
@@ -3692,8 +3713,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   player: {fileID: 1422286026}
-  nodeMaterial: {fileID: 2100000, guid: 1bb9ea6dc96303048870a4320ea08ead, type: 2}
-  nodePrefab: {fileID: 1770718188855582463, guid: fd1506918122ef649af9383bca73f3f6, type: 3}
 --- !u!4 &2070629655
 Transform:
   m_ObjectHideFlags: 0
@@ -3721,10 +3740,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41043690d4582064496839c6129698f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  graphRep: 0
-  maxIterationTicks: 0
-  repSlowDown: 0
-  waitTime: 0.05
   objective: {fileID: 4845726893088584167, guid: 01e0400cc5da7ca4a9c5005825bb8451, type: 3}
 --- !u!114 &2070629657
 MonoBehaviour:
@@ -3735,23 +3750,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 2070629653}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eb70ff700efc80940829f27416d857d5, type: 3}
+  m_Script: {fileID: 11500000, guid: a45bcf2343a47ef40a2981be37151f8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   canvas: {fileID: 1938500348}
   obstacles: {fileID: 1622365165}
---- !u!114 &2070629658
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2070629653}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5a2462d22df89bf4aa2eac4bec1c2bda, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &2070629659
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3767,7 +3770,7 @@ MonoBehaviour:
   MazeWorldSizeX: 50
   MazeWorldSizeY: 50
   CellEdge: 2
-  nodeModel: {fileID: 2403687059322973599, guid: 17cf281761e502144b2ef671f50853d1, type: 3}
+  nodeModel: {fileID: 2403687059322973599, guid: 80a1e5b07261b0147927684d0485ccd5, type: 3}
 --- !u!1001 &949656260560366630
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3847,5 +3850,6 @@ PrefabInstance:
       propertyPath: m_ApplyRootMotion
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4473702870934460288, guid: b955c20bb36c76f43bbc74ea37877ddd, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: b955c20bb36c76f43bbc74ea37877ddd, type: 3}

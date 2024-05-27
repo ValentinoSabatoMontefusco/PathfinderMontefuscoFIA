@@ -13,7 +13,7 @@ public class Pathfinding : MonoBehaviour
     public static Action onProcessingEnd;
     public static bool graphRep = false;
     //public readonly float maxIterationTicks;
-    public static float maxIterationTicks = Time.fixedDeltaTime * Stopwatch.Frequency;
+    public static float maxIterationTicks; //= Time.fixedDeltaTime * Stopwatch.Frequency;
     public static bool repSlowDown;
     public static float waitTime = 0.05f;
     public GameObject objective;
@@ -28,20 +28,22 @@ public class Pathfinding : MonoBehaviour
 
         GridNode[,] copiedGrid = Grid.copyGrid(pathRequest.grid);
 
-        PathFind(startNode, targetNode, copiedGrid, pathRequest.searchType);
+        List<GridNode> solutionPath = PathFind(startNode, targetNode, copiedGrid, pathRequest.searchType);
+        if (solutionPath != null)
+            PathRequestManager.FinishedProcessing(new PathResult(pathToWaypoints(solutionPath), true, pathRequest.feedback));
         return;
 
 
-        switch (pathRequest.searchType)
-        {
-            case searchAlgorithm.Astar: StartCoroutine(AstarPathfind(startNode, targetNode, pathRequest.feedback, pathRequest.grid)); break;
-            case searchAlgorithm.BFS: StartCoroutine(BFSPathfind(startNode, targetNode, pathRequest.feedback, pathRequest.grid)); break;
-            case searchAlgorithm.BFGreedy: StartCoroutine(BFGreedyPathfind(startNode, targetNode, pathRequest.feedback, pathRequest.grid)); break;
-            case searchAlgorithm.DFS: StartCoroutine(DFSPathfind(startNode, targetNode, pathRequest.feedback, pathRequest.grid)); break;
-            case searchAlgorithm.UniformCost: StartCoroutine(UniformCostPathfind(startNode, targetNode, pathRequest.feedback, pathRequest.grid)); break;
-            //case searchAlgorithm.IDDFS: StartCoroutine(IDDFSPathfind(startNode, targetNode, pathRequest.feedback, pathRequest.grid)); break;
-            default: UnityEngine.Debug.Log("There'z a been some prob with yer pathfounding, m8"); break; //kek
-        }
+        //switch (pathRequest.searchType)
+        //{
+        //    case searchAlgorithm.Astar: StartCoroutine(AstarPathfind(startNode, targetNode, pathRequest.feedback, pathRequest.grid)); break;
+        //    case searchAlgorithm.BFS: StartCoroutine(BFSPathfind(startNode, targetNode, pathRequest.feedback, pathRequest.grid)); break;
+        //    case searchAlgorithm.BFGreedy: StartCoroutine(BFGreedyPathfind(startNode, targetNode, pathRequest.feedback, pathRequest.grid)); break;
+        //    case searchAlgorithm.DFS: StartCoroutine(DFSPathfind(startNode, targetNode, pathRequest.feedback, pathRequest.grid)); break;
+        //    case searchAlgorithm.UniformCost: StartCoroutine(UniformCostPathfind(startNode, targetNode, pathRequest.feedback, pathRequest.grid)); break;
+        //    //case searchAlgorithm.IDDFS: StartCoroutine(IDDFSPathfind(startNode, targetNode, pathRequest.feedback, pathRequest.grid)); break;
+        //    default: UnityEngine.Debug.Log("There'z a been some prob with yer pathfounding, m8"); break; //kek
+        //}
 
     }
 
@@ -78,11 +80,12 @@ public class Pathfinding : MonoBehaviour
     }
 
 
-    public static void PathFind(GridNode startNode, GridNode targetNode, GridNode[,] grid, searchAlgorithm searchAlg)  
+    public static List<GridNode> PathFind(GridNode startNode, GridNode targetNode, GridNode[,] grid, searchAlgorithm searchAlg)  
     {
         Stopwatch sw = new Stopwatch(); // Valutare di separare
         HashSet<GridNode> explored = new();
         IFrontier<GridNode> frontier;
+        bool heuristic = (searchAlg == searchAlgorithm.Astar || searchAlg == searchAlgorithm.BFGreedy);
 
         switch (searchAlg)
         {
@@ -91,7 +94,7 @@ public class Pathfinding : MonoBehaviour
             case searchAlgorithm.UniformCost: frontier = new HeapFrontier(); break;
             case searchAlgorithm.BFS: frontier = new QueueFrontier(); break;
             case searchAlgorithm.DFS: frontier = new StackFrontier(); break;
-            default: return; //Handle error
+            default: return null; //Handle error
         }               // Use a separate method to initialize
 
         if (!targetNode.walkable)
@@ -104,6 +107,11 @@ public class Pathfinding : MonoBehaviour
         GridNode currentNode;
         ExplorationPolicy explorationPolicy = AStarPolicy;
 
+        startNode.g_cost = 0;
+        if (heuristic)
+            startNode.h_cost = Grid.getDistance(startNode, targetNode);
+
+
         while (frontier.Count() > 0)
         {
             currentNode = frontier.Extract();
@@ -111,7 +119,8 @@ public class Pathfinding : MonoBehaviour
             if (currentNode == targetNode)
             {
                 sw.Stop();
-                // Send results
+                return BuildSolutionPath(startNode, targetNode);
+                
             }
 
             explored.Add(currentNode);
@@ -121,6 +130,7 @@ public class Pathfinding : MonoBehaviour
                 explorationPolicy(currentNode, neighbour, targetNode, frontier, explored);
             }
         }
+        return null;
     }
      
 
@@ -132,7 +142,7 @@ public class Pathfinding : MonoBehaviour
 
         Stopwatch sw = new Stopwatch();                                                 // Variabile per il tracciamento del tempo di computazione
         HashSet<GridNode> explored = new HashSet<GridNode>();                           
-        Heap<GridNode> frontier = new Heap<GridNode>(Grid.MaxSize);               // Frontiera implementata tramite min-coda a priorità
+        Heap<GridNode> frontier = new Heap<GridNode>();               // Frontiera implementata tramite min-coda a priorità
 
         if (!targetNode.walkable)                                                       // Ricerca BFS del più vicino nodo percorribile se quello di
             targetNode = Grid.closestWalkableNode(targetNode);                    // destinazione scelto non lo è
@@ -371,7 +381,7 @@ public class Pathfinding : MonoBehaviour
     public IEnumerator BFGreedyPathfind(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback, GridNode[,] grid)
     {
         HashSet<GridNode> explored = new HashSet<GridNode>();
-        Heap<GridNode> frontier = new Heap<GridNode>(Grid.MaxSize);
+        Heap<GridNode> frontier = new Heap<GridNode>();
         Stopwatch sw = new Stopwatch();
         sw.Restart();
         float frameStartTicks = sw.ElapsedTicks;
@@ -453,7 +463,7 @@ public class Pathfinding : MonoBehaviour
 
         Stopwatch sw = new Stopwatch();
         HashSet<GridNode> explored = new HashSet<GridNode>();
-        Heap<GridNode> frontier = new Heap<GridNode>(Grid.MaxSize);
+        Heap<GridNode> frontier = new Heap<GridNode>();
 
 
         if (!targetNode.walkable)
@@ -540,9 +550,9 @@ public class Pathfinding : MonoBehaviour
 
     }
    
-    public IEnumerator PathFoundRoutine(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback)
+    public static IEnumerator PathFoundRoutine(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback)
     {
-        List<GridNode> path = parentChildPath(startNode, targetNode);
+        List<GridNode> path = BuildSolutionPath(startNode, targetNode);
         //Grid.path = path;
         PathRequestManager.FinishedProcessing(new PathResult(pathToWaypoints(path), true, feedback));
         if (graphRep)
@@ -553,7 +563,7 @@ public class Pathfinding : MonoBehaviour
 
     }
 
-    public List<GridNode> parentChildPath(GridNode eldest, GridNode youngest)
+    public static List<GridNode> BuildSolutionPath(GridNode eldest, GridNode youngest)
     {
 
         List<GridNode> path = new List<GridNode>();
@@ -574,7 +584,7 @@ public class Pathfinding : MonoBehaviour
         return path;
     }
 
-    public Vector3[] pathToWaypoints(List<GridNode> path)
+    public static Vector3[] pathToWaypoints(List<GridNode> path)
     {
         Vector2 OldDirection = Vector2.zero;
         Vector2 NewDirection;
