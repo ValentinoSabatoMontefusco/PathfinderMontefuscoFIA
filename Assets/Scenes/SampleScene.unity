@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.09677082, g: 0.35174394, b: 0.71606493, a: 1}
+  m_IndirectSpecularColor: {r: 0.09675939, g: 0.35172388, b: 0.71604127, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -3684,6 +3684,7 @@ GameObject:
   - component: {fileID: 2070629656}
   - component: {fileID: 2070629657}
   - component: {fileID: 2070629659}
+  - component: {fileID: 2070629660}
   m_Layer: 0
   m_Name: PathfindingController
   m_TagString: Untagged
@@ -3771,6 +3772,21 @@ MonoBehaviour:
   MazeWorldSizeY: 50
   CellEdge: 2
   nodeModel: {fileID: 2403687059322973599, guid: 80a1e5b07261b0147927684d0485ccd5, type: 3}
+--- !u!114 &2070629660
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2070629653}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8550687b9dbba84b8b8b96d86afef8b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nodePrefab: {fileID: 1770718188855582463, guid: 72277378ebd81004b9f3a44b2fefd9e0, type: 3}
+  nodeMaterial: {fileID: 2100000, guid: 1bb9ea6dc96303048870a4320ea08ead, type: 2}
+  wait_time: 0.04
 --- !u!1001 &949656260560366630
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -29,7 +29,7 @@ public class GridNode : Node, IHeapItem<GridNode>, IComparable<GridNode>
     int heapIndex;
     //public bool deadEnd = false;
     public (int, int) GridXY { get { return (GridX, GridY); } }
-    private GameObject drawnNode;
+    public GameObject drawnNode;
     
 
     // Grid references
@@ -38,7 +38,7 @@ public class GridNode : Node, IHeapItem<GridNode>, IComparable<GridNode>
 
 
 
-    private Action<float, Material> onNodeStateChange;
+    private Action onNodeStateChange;
     private nodeStateEnum nodeState;
     public nodeStateEnum nodestate
     {
@@ -46,7 +46,7 @@ public class GridNode : Node, IHeapItem<GridNode>, IComparable<GridNode>
         set
         {
                 nodeState = value;
-                onNodeStateChange?.Invoke(gridSource.nodeRadius, gridSource.nodeMaterial);
+                onNodeStateChange?.Invoke();
  
         }
     }
@@ -104,7 +104,7 @@ public class GridNode : Node, IHeapItem<GridNode>, IComparable<GridNode>
 
     
 
-    public void drawNode(float nodeRadius, Material nodeMaterial)
+    public void drewNode(float nodeRadius, Material nodeMaterial)
     {
         if (drawnNode != null)
             GameObject.Destroy(drawnNode);
@@ -123,6 +123,11 @@ public class GridNode : Node, IHeapItem<GridNode>, IComparable<GridNode>
         }
         color.a = 0.3f;
         drawnNode.GetComponent<Renderer>().material.color = color;
+    }
+
+    public void drawNode()
+    {
+        PresentationLayer.enqueueNodeDraw(this);
     }
 
     public void destroyDrawnNode()
