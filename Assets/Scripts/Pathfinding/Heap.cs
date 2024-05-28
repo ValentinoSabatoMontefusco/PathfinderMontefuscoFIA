@@ -106,7 +106,7 @@ public class Heap<T> : ICollection where T : IHeapItem<T>
             if (leftChildIndex < currentItemCount && entries[leftChildIndex].value < entries[swapIndex].value)
                 swapIndex = leftChildIndex;
 
-            if (rightChildIndex < currentItemCount && entries[leftChildIndex].value < entries[swapIndex].value)
+            if (rightChildIndex < currentItemCount && entries[rightChildIndex].value < entries[swapIndex].value)
                 swapIndex = rightChildIndex;
 
             if (swapIndex == index)
