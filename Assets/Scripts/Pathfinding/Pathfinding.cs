@@ -9,8 +9,9 @@ using Debug = UnityEngine.Debug;
 
 public class Pathfinding : MonoBehaviour
 {
-
+    public static Action onProcessingBegin;
     public static Action onProcessingEnd;
+
     
     //public readonly float maxIterationTicks;
     public static float maxIterationTicks; //= Time.fixedDeltaTime * Stopwatch.Frequency
@@ -33,8 +34,10 @@ public class Pathfinding : MonoBehaviour
         Debug.Log("Fattapposto completato in totale in " + sw.ElapsedMilliseconds + "ms");
         List<GridNode> solutionPath = PathFind(startNode, targetNode, pathRequest.grid, pathRequest.searchType);
         if (solutionPath != null)
-            PathRequestManager.FinishedProcessing(new PathResult(pathToWaypoints(solutionPath), true, pathRequest.feedback));
-
+            PathRequestManager.FinishedProcessing(new PathResult(pathToWaypoints(solutionPath), true, pathRequest));
+        else
+            PathRequestManager.FinishedProcessing(new PathResult(null, false, pathRequest));
+        
         
         return;
 
@@ -53,8 +56,8 @@ public class Pathfinding : MonoBehaviour
     }
 
     private delegate void startNodeInitialization();
-    //private delegate void ExplorationPolicy(GridNode currentNode, GridNode neighbour, GridNode targetNode, IFrontier<GridNode> frontier, HashSet<GridNode> explored, Dictionary<Tuple<int, int>, NodeCost> costTable);
     private delegate void ExplorationPolicy(GridNode currentNode, GridNode neighbour, ExplorationInfo explorationInfo);
+
     private class ExplorationInfo
     {
        
@@ -190,9 +193,7 @@ public class Pathfinding : MonoBehaviour
         explorationPolicy = ChooseExplorationPolicy(searchAlg);
         InitializeFrontier(startNode, targetNode, frontier, nodeTable, searchAlg);
 
-
         GridNode currentNode;
-        
         ExplorationInfo explorationInfo = new ExplorationInfo(targetNode, frontier, explored, nodeTable);
 
         while (frontier.Count() > 0)
@@ -216,7 +217,6 @@ public class Pathfinding : MonoBehaviour
             foreach (GridNode neighbour in Grid.getNeighbors(currentNode, grid))
             {
                 explorationPolicy(currentNode, neighbour, explorationInfo);
-                
             }
 
             if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Explored;
@@ -274,18 +274,18 @@ public class Pathfinding : MonoBehaviour
 
    
 
-    public static IEnumerator PathFoundRoutine(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback)
-    {
-        List<GridNode> path = BuildSolutionPath(startNode, targetNode, null);
-        //Grid.path = path;
-        PathRequestManager.FinishedProcessing(new PathResult(pathToWaypoints(path), true, feedback));
-        if (PresentationLayer.GraphRep)
-        {
-            yield return new WaitForSeconds(3f);
-            onProcessingEnd?.Invoke();
-        }
+    //public static IEnumerator PathFoundRoutine(GridNode startNode, GridNode targetNode, Action<Vector3[], bool> feedback)
+    //{
+    //    List<GridNode> path = BuildSolutionPath(startNode, targetNode, null);
+    //    //Grid.path = path;
+    //    PathRequestManager.FinishedProcessing(new PathResult(pathToWaypoints(path), true, feedback));
+    //    if (PresentationLayer.GraphRep)
+    //    {
+    //        yield return new WaitForSeconds(3f);
+    //        onProcessingEnd?.Invoke();
+    //    }
 
-    }
+    //}
 
     private static List<GridNode> BuildSolutionPath(GridNode eldest, GridNode youngest, Dictionary<(int, int), NodeLabels> nodeTable)
     {

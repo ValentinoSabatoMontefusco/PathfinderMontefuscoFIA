@@ -3786,7 +3786,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nodePrefab: {fileID: 1770718188855582463, guid: 72277378ebd81004b9f3a44b2fefd9e0, type: 3}
   nodeMaterial: {fileID: 2100000, guid: 1bb9ea6dc96303048870a4320ea08ead, type: 2}
-  wait_time: 0.04
+  wait_time: 0.01
 --- !u!1001 &949656260560366630
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -16,12 +16,37 @@ public static class PathRequestManager
 
     static Queue<PathRequest> RequestQueue = new();
     static bool ProcessingAvailable = true;
+    public static Action<PathRequest> onPathRequestSet;
+    private static HashSet<PathResult> waitingPathResults = new();
+
     static PathRequest currentPR;
+    static PathRequest CurrentPR
+    {
+        get => currentPR;
+        set
+        {
+            currentPR = value;
+            onPathRequestSet?.Invoke(currentPR);
+        }
+    }
     static Pathfinding pathfinding;  // staticize
     static Queue<Thread> threads;
 
    
+    public static void FeedbackPathRequest(PathRequest pathRequest)
+    {
+        foreach (PathResult pathResult in waitingPathResults)
+        {
+            if (pathResult.pathRequest.Equals(pathRequest))
+            {
+                pathResult.pathRequest.feedback(pathResult.waypoints, pathResult.success);
+                waitingPathResults.Remove(pathResult);
+                break;
+            }
+                
 
+        }
+    }
 
 
     public static void StartPathRequest(PathRequest pathRequest)
@@ -38,9 +63,10 @@ public static class PathRequestManager
         {
             if (RequestQueue.Count > 0)
             {
-                currentPR = RequestQueue.Dequeue();
+                CurrentPR = RequestQueue.Dequeue();
                 ProcessingAvailable = false;
-                Pathfinding.StartPathFinding(currentPR);
+                Pathfinding.StartPathFinding(CurrentPR);
+                
 
             }
         }
@@ -48,10 +74,15 @@ public static class PathRequestManager
 
     public static void FinishedProcessing(PathResult pathResult)
     {
-        pathResult.feedback(pathResult.waypoints, pathResult.success);
+        if (!PresentationLayer.GraphRep)
+            pathResult.pathRequest.feedback(pathResult.waypoints, pathResult.success);
+        else
+            waitingPathResults.Add(pathResult);
+        
         ProcessingAvailable = true;
         TryProcess();
     }
+
 
 }
 
@@ -79,13 +110,13 @@ public struct PathResult
 {
     public Vector3[] waypoints;
     public bool success;
-    public Action<Vector3[], bool> feedback;
+    public PathRequest pathRequest;
 
-    public PathResult(Vector3[] waypoints, bool success, Action<Vector3[], bool> feedback)
+    public PathResult(Vector3[] waypoints, bool success, PathRequest pathRequest)
     {
         this.waypoints = waypoints;
         this.success = success;
-        this.feedback = feedback;
+        this.pathRequest = pathRequest;
     }
 }
 //public class PathRequestManager : MonoBehaviour

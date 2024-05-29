@@ -38,7 +38,7 @@ public class GridNode : Node, IHeapItem<GridNode>, IComparable<GridNode>
 
 
 
-    private Action onNodeStateChange;
+    public static Action<GridNode> onNodeStateChange;
     private nodeStateEnum nodeState;
     public nodeStateEnum nodestate
     {
@@ -46,7 +46,7 @@ public class GridNode : Node, IHeapItem<GridNode>, IComparable<GridNode>
         set
         {
                 nodeState = value;
-                onNodeStateChange?.Invoke();
+                onNodeStateChange?.Invoke(this);
  
         }
     }
@@ -56,9 +56,9 @@ public class GridNode : Node, IHeapItem<GridNode>, IComparable<GridNode>
     {
         this.walkable = walkable;
         nodeState = nodeStateEnum.Unexplored;
-        onNodeStateChange += drawNode;
+        //onNodeStateChange += drawNode;
         this.gridSource = gridSource;
-        Pathfinding.onProcessingEnd += destroyDrawnNode;
+        PresentationLayer.onResetDraw += destroyDrawnNode;
         this.movementPenalty = movementPenalty;
         g_cost = int.MaxValue;
         this.grid = grid;

@@ -76,6 +76,18 @@ public class Heap<T> : ICollection where T : IHeapItem<T>
 
     public T Extract()
     {
+        /*********************** DEBUG ******************/
+        Entry minEntry = entries[0];
+        for (int i = 0; i < currentItemCount; i++)
+        {
+            if (entries[i].value < minEntry.value)
+                minEntry = entries[i];
+        }
+            
+        if (minEntry != entries[0])
+            Debug.Log("L'heap non ha prodotto con l'extract l'entry minima. Qualcosa non va");
+        /************************************************/
+
         if (currentItemCount == 0)
             throw new InvalidOperationException();
 
