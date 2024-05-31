@@ -101,14 +101,19 @@ public class Pathfinding : MonoBehaviour
                 nodeTable[neighbour.GridXY].h_cost = Grid.getDistance(neighbour, targetNode);
                 nodeTable[neighbour.GridXY].parent = currentNode;
 
+                // TENTATIVE
+                neighbour.g_cost = newCost;
+                neighbour.h_cost = nodeTable[neighbour.GridXY].h_cost;
+
                 if (!frontier.Contains(neighbour))
                 {
-                    frontier.Add(neighbour, nodeTable[neighbour.GridXY].f_cost);
+                    frontier.Add(neighbour, nodeTable[neighbour.GridXY].f_cost, nodeTable[neighbour.GridXY].h_cost);
                     if (PresentationLayer.GraphRep) neighbour.nodestate = nodeStateEnum.Frontier;
                 }
                 else
                 {
                     frontier.UpdateItem(neighbour, nodeTable[neighbour.GridXY].f_cost);
+                    if (PresentationLayer.GraphRep) neighbour.nodestate = nodeStateEnum.Frontier;
                 }
             }
 
@@ -128,6 +133,8 @@ public class Pathfinding : MonoBehaviour
                 
                 nodeTable[neighbour.GridXY].h_cost = Grid.getDistance(neighbour, targetNode);
                 nodeTable[neighbour.GridXY].parent = currentNode;
+
+                
 
                 if (!frontier.Contains(neighbour))
                 {
@@ -164,6 +171,24 @@ public class Pathfinding : MonoBehaviour
                 {
                     frontier.UpdateItem(neighbour, nodeTable[neighbour.GridXY].g_cost);
                 }
+            }
+
+        }
+    }
+
+    private static void BasicPolicy(GridNode currentNode, GridNode neighbour, ExplorationInfo expInfo)
+    {
+        expInfo.Unpackage(out GridNode targetNode, out IFrontier<GridNode> frontier, out ICollection<GridNode> explored, out Dictionary<(int, int), NodeLabels> nodeTable);
+
+        if (!explored.Contains(neighbour) && neighbour.walkable == true)
+        {
+            if (!frontier.Contains(neighbour))
+            {
+                nodeTable.Add(neighbour.GridXY, new NodeLabels());
+                nodeTable[neighbour.GridXY].parent = currentNode;
+
+                frontier.Add(neighbour);
+                if (PresentationLayer.GraphRep) neighbour.nodestate = nodeStateEnum.Frontier;
             }
 
         }
@@ -244,6 +269,8 @@ public class Pathfinding : MonoBehaviour
             case searchAlgorithm.Astar: return AStarPolicy;
             case searchAlgorithm.BFGreedy: return BFGreedyPolicy;
             case searchAlgorithm.UniformCost: return UniformCostPolicy;
+            case searchAlgorithm.BFS:
+            case searchAlgorithm.DFS: return BasicPolicy;
             default: return null;
         }
     }
@@ -266,6 +293,7 @@ public class Pathfinding : MonoBehaviour
             case searchAlgorithm.UniformCost: frontier.Add(startNode, nodeTable[startNode.GridXY].g_cost); break;
             default: frontier.Add(startNode); break;
         }
+        startNode.nodestate = nodeStateEnum.Frontier;
         
     }
 
@@ -299,10 +327,9 @@ public class Pathfinding : MonoBehaviour
         while (currentNode != eldest)
         {
             path.Add(nodeTable[currentNode.GridXY].parent);
+            currentNode = nodeTable[currentNode.GridXY].parent;
             if (PresentationLayer.GraphRep)
                 currentNode.nodestate = nodeStateEnum.Solution;
-            currentNode = nodeTable[currentNode.GridXY].parent;
-
         }
 
         return path;

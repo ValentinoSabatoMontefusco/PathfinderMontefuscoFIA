@@ -368,6 +368,7 @@
 "Assets/Scripts/Pathfinding/PFAlgorightms.cs"
 "Assets/Scripts/Player_Movement.cs"
 "Assets/Scripts/Presentation/PresentationLayer.cs"
+"Assets/Scripts/Presentation/SliderScript.cs"
 "Assets/Scripts/Support Classes.cs"
 -langversion:9.0
 

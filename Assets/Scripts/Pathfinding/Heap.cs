@@ -6,16 +6,41 @@ using UnityEngine;
 
 public class Heap<T> : ICollection where T : IHeapItem<T>
 {
-    //List<T> items;
     private class Entry
     {
         public T item;
         public int value;
+        public int tiebreaker;
 
         public Entry(T item, int value)
         {
             this.item = item;
             this.value = value;
+        }
+
+        public Entry (T item, int value, int tiebreaker) : this(item, value)
+        {
+            this.tiebreaker = tiebreaker;
+        }
+
+        public int CompareTo(Entry other)
+        {
+            if (value > other.value)
+                return 1;
+            else if (value < other.value)
+            {
+                return -1;
+            }
+            else
+            {
+                if (tiebreaker == 0 && other.tiebreaker == 0 || (tiebreaker == other.tiebreaker))
+                    return 0;
+                else if (tiebreaker >= other.tiebreaker)
+                    return 1;
+                else if (tiebreaker < other.tiebreaker)
+                    return -1;
+            }
+            return 0;
         }
     }
 
@@ -38,6 +63,13 @@ public class Heap<T> : ICollection where T : IHeapItem<T>
         currentItemCount++;
 
     }
+    public void Add(T item, int value, int tiebreaker)
+    {
+        item.HeapIndex = currentItemCount;
+        entries[currentItemCount] = new Entry(item, value, tiebreaker);
+        Sortup(entries[item.HeapIndex]);
+        currentItemCount++;
+    }
 
     private void Sortup(Entry entry)
     {
@@ -48,22 +80,13 @@ public class Heap<T> : ICollection where T : IHeapItem<T>
         {
             int parentIndex = (index - 1) / 2;
 
-            if (entry.value >= entries[parentIndex].value)
+            if (entry.CompareTo(entries[parentIndex]) >= 0)
                 break;
+       
 
             Swap(index, parentIndex);
             index = parentIndex;
         }
-
-
-        //int parentIndex = (entry.item.HeapIndex - 1) / 2;
-
-        //while (entry.value < entries[parentIndex].value)
-        //{
-        //    Swap(entry, entries[parentIndex]);
-        //    parentIndex = (entry.item.HeapIndex - 1) / 2;
-        //}
-
         
     }
 
@@ -76,17 +99,7 @@ public class Heap<T> : ICollection where T : IHeapItem<T>
 
     public T Extract()
     {
-        /*********************** DEBUG ******************/
-        Entry minEntry = entries[0];
-        for (int i = 0; i < currentItemCount; i++)
-        {
-            if (entries[i].value < minEntry.value)
-                minEntry = entries[i];
-        }
-            
-        if (minEntry != entries[0])
-            Debug.Log("L'heap non ha prodotto con l'extract l'entry minima. Qualcosa non va");
-        /************************************************/
+        
 
         if (currentItemCount == 0)
             throw new InvalidOperationException();
@@ -115,34 +128,17 @@ public class Heap<T> : ICollection where T : IHeapItem<T>
             rightChildIndex = index * 2 + 2;
             swapIndex = index;
 
-            if (leftChildIndex < currentItemCount && entries[leftChildIndex].value < entries[swapIndex].value)
+            if (leftChildIndex < currentItemCount && entries[leftChildIndex].CompareTo(entries[swapIndex]) < 0)
                 swapIndex = leftChildIndex;
 
-            if (rightChildIndex < currentItemCount && entries[rightChildIndex].value < entries[swapIndex].value)
+            if (rightChildIndex < currentItemCount && entries[rightChildIndex].CompareTo(entries[swapIndex]) < 0)
                 swapIndex = rightChildIndex;
 
             if (swapIndex == index)
                 break;
 
             Swap(index, swapIndex);
-            index = swapIndex;
-
-            //if (leftChildIndex < currentItemCount)
-            //{
-            //    swapIndex = leftChildIndex;
-            //    if (rightChildIndex < currentItemCount)
-            //        if (entries[leftChildIndex].value > entries[rightChildIndex].value)
-            //            swapIndex = rightChildIndex;
-
-            //    if (entry.value > entries[swapIndex].value)
-            //        Swap(entry, entries[swapIndex]);
-            //    else
-            //        return;
-            //}
-            //else
-            //    return;
-
-            
+            index = swapIndex;          
             
         }
 
@@ -155,18 +151,32 @@ public class Heap<T> : ICollection where T : IHeapItem<T>
         entries[index1].item.HeapIndex = index1;
         entries[index2].item.HeapIndex = index2;        
         
-        //entries[pair1.item.HeapIndex] = pair2;
-        //entries[pair2.item.HeapIndex] = pair1;
-        //int tempIndex = pair1.item.HeapIndex;
-        //pair1.item.HeapIndex = pair2.item.HeapIndex;
-        //pair2.item.HeapIndex = tempIndex;
-
+       
     }
 
-    public bool Contains (T item)                           // ???????
+    public bool Contains(T item)                           // ???????
     {
-        return Equals(entries[item.HeapIndex], item);
+        bool sneakyReturn;
+        bool actualReturn = false;
+        if (item.HeapIndex < currentItemCount)
+            sneakyReturn = Equals(entries[item.HeapIndex].item, item);
+        else
+            sneakyReturn = false;
 
+        for (int i = 0; i < currentItemCount; i++)
+        {
+            if (entries[i].item.Equals(item))
+            {
+                actualReturn = true;
+                break;
+            }
+                
+        }
+
+        if (sneakyReturn != actualReturn) { 
+            Debug.Log("OCCRISTO CHE CAZZO È SUCCESSO QUI!");
+        }
+        return actualReturn;
     }
     
     public int Count
@@ -208,3 +218,47 @@ public interface IHeapItem<T> : IComparable<T>
     }
 
 }
+
+/*********************** DEBUG ******************
+        Entry minEntry = entries[0];
+        for (int i = 0; i < currentItemCount; i++)
+        {
+            if (entries[i].value < minEntry.value)
+                minEntry = entries[i];
+        }
+            
+        if (minEntry != entries[0])
+            Debug.Log("L'heap non ha prodotto con l'extract l'entry minima. Qualcosa non va");
+        ************************************************/
+
+
+
+//entries[pair1.item.HeapIndex] = pair2;
+//entries[pair2.item.HeapIndex] = pair1;
+//int tempIndex = pair1.item.HeapIndex;
+//pair1.item.HeapIndex = pair2.item.HeapIndex;
+//pair2.item.HeapIndex = tempIndex;
+
+//if (leftChildIndex < currentItemCount)
+//{
+//    swapIndex = leftChildIndex;
+//    if (rightChildIndex < currentItemCount)
+//        if (entries[leftChildIndex].value > entries[rightChildIndex].value)
+//            swapIndex = rightChildIndex;
+
+//    if (entry.value > entries[swapIndex].value)
+//        Swap(entry, entries[swapIndex]);
+//    else
+//        return;
+//}
+//else
+//    return;
+
+
+//int parentIndex = (entry.item.HeapIndex - 1) / 2;
+
+//while (entry.value < entries[parentIndex].value)
+//{
+//    Swap(entry, entries[parentIndex]);
+//    parentIndex = (entry.item.HeapIndex - 1) / 2;
+//}

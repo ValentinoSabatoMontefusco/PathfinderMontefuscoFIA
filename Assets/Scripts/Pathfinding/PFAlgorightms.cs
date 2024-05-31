@@ -7,6 +7,7 @@ public interface IFrontier<T>
     
     void Add(T item);
     void Add(T item, int value);
+    void Add(T item, int value, int tiebreaker);
     int Count();
     T Extract();
 
@@ -53,6 +54,11 @@ public class StackFrontier : IFrontier<GridNode>
     {
         throw new System.NotImplementedException();
     }
+
+    public void Add(GridNode item, int value, int tiebreaker)
+    {
+        throw new System.NotImplementedException();
+    }
 }
 
 public class QueueFrontier : IFrontier<GridNode>
@@ -92,6 +98,11 @@ public class QueueFrontier : IFrontier<GridNode>
     {
         throw new System.NotImplementedException();
     }
+
+    public void Add(GridNode item, int value, int tiebreaker)
+    {
+        throw new System.NotImplementedException();
+    }
 }
 
 public class HeapFrontier : IFrontier<GridNode>
@@ -110,6 +121,11 @@ public class HeapFrontier : IFrontier<GridNode>
     public void Add(GridNode node, int value)
     {
         heapFrontier.Add(node, value);
+    }
+
+    public void Add(GridNode node, int value, int tiebreaker)
+    {
+        heapFrontier.Add(node, value, tiebreaker);
     }
 
 

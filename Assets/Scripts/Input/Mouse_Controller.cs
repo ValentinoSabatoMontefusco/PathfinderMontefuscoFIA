@@ -26,11 +26,20 @@ public class Mouse_Controller : MonoBehaviour
     public GameObject obstacles;
     bool isPressed;
 
+    Vector3 lastMousePos;
+    [SerializeField]
+    LayerMask nodeRepMask;
+    Camera topDownCamera;
+    RawImage topPerspective;
+    bool isHovering;
+
     public static Action onObstaclesUpdate;
 
     // Start is called before the first frame update
     void Start()
     {
+        topDownCamera = GameObject.Find("Top-Down Camera").GetComponent<Camera>();
+        topPerspective = GameObject.Find("NodePerspective").GetComponent<RawImage>();
         players = GameObject.FindGameObjectsWithTag("Player");
         isPressed = false;
     }
@@ -39,6 +48,7 @@ public class Mouse_Controller : MonoBehaviour
     void Update()
 
     {
+        NodeHoverCheck();
         if (Input.GetMouseButtonDown(0))
             mousePos0 = Input.mousePosition;
 
@@ -110,7 +120,8 @@ public class Mouse_Controller : MonoBehaviour
 
         clickOnSinglePlayer();
         clickDragRectangle();
-        
+
+        lastMousePos = Input.mousePosition;
     }
 
 
@@ -202,6 +213,31 @@ public class Mouse_Controller : MonoBehaviour
                 //Debug.Log("xMin = " + xMin.ToString() +", yMin = " + yMin.ToString());
             }
         }
+    }
+
+    
+
+
+    private void NodeHoverCheck()
+    {
+        if (Input.mousePosition == lastMousePos)
+            return;
+
+        ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out hit, Mathf.Infinity, nodeRepMask))
+        {
+            isHovering = true;
+            topDownCamera.transform.position = hit.collider.transform.position + Vector3.up * 10;
+            topDownCamera.orthographicSize = hit.collider.gameObject.transform.localScale.x/2;
+        }
+        else
+        {
+            isHovering = false;
+        }
+
+        topPerspective.gameObject.SetActive(isHovering);
+
+
     }
 }
 

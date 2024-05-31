@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -63,7 +64,8 @@ public class PresentationLayer : MonoBehaviour
         if (GraphRep)
         {
             drawQueue.Enqueue(new DrawingRequest(gridnode, gridnode.nodestate, currentPathRequest));
-            onQueueNonEmpty.Invoke();
+            if (gridnode.nodestate == nodeStateEnum.Solution)
+                onQueueNonEmpty.Invoke();
         }
         
     }
@@ -96,8 +98,17 @@ public class PresentationLayer : MonoBehaviour
             nodeToDraw = drawReq.gridnode;
             if (nodeToDraw.drawnNode == null)
             {
-                nodeToDraw.drawnNode = Instantiate(nodePrefab, nodeToDraw.worldPos, Quaternion.identity);
+                nodeToDraw.drawnNode = Instantiate(nodePrefab, nodeToDraw.worldPos + Vector3.up * 0.5f, Quaternion.identity);
                 nodeToDraw.drawnNode.GetComponent<Renderer>().material = nodeMaterial;
+                if (nodeToDraw.f_cost != 0)
+                {
+                    TextMeshPro TMPComp = nodeToDraw.drawnNode.GetComponentInChildren<TextMeshPro>();
+                    TMPComp.text = nodeToDraw.f_cost.ToString();
+                    if (nodeToDraw.g_cost != 0 && nodeToDraw.h_cost != 0)
+                    {
+                        TMPComp.text += "\n" + nodeToDraw.g_cost.ToString() + " + " + nodeToDraw.h_cost.ToString();
+                    }
+                }
             }
                 
             
@@ -106,10 +117,12 @@ public class PresentationLayer : MonoBehaviour
             color.a = 0.3f;
             nodeToDraw.drawnNode.GetComponent<Renderer>().material.color = color;
             nodeToDraw.drawnNode.transform.localScale = Vector3.one * (nodeRadius * 1.6f);
-            
-            yield return new WaitForSeconds(!repSlowDown ? wait_time : wait_time * 2);
+
+            if (wait_time > 0.01f)
+                yield return new WaitForSeconds(wait_time);
         }
-        
+
+        yield return null;
         isDrawing = false;
         if (handledPR.Equals(currentPathRequest))
             FlushPathRequestFromQueue(drawQueue, handledPR);
@@ -143,5 +156,8 @@ public class PresentationLayer : MonoBehaviour
         
     }
 
-
+    public void ChangeWaitTime(float newTime)
+    {
+        wait_time = newTime;
+    }
 }
