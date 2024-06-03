@@ -239,7 +239,7 @@ public class Pathfinding : MonoBehaviour
 
             explored.Add(currentNode);
 
-            foreach (GridNode neighbour in Grid.getNeighbors(currentNode, grid))
+            foreach (GridNode neighbour in Grid.getNeighbors(currentNode, grid, false))
             {
                 explorationPolicy(currentNode, neighbour, explorationInfo);
             }

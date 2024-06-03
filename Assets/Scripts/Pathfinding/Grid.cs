@@ -137,12 +137,13 @@ public class Grid : MonoBehaviour
         return indexes;
     }
 
-    public static List<GridNode> getNeighbors(GridNode node, GridNode[,] grid)
+    public static ICollection<GridNode> getNeighbors(GridNode node, GridNode[,] grid, bool isRandom)
     {
         if (node == null)
             return null;
 
-        List<GridNode> neighbors = new List<GridNode>();
+        ICollection<GridNode> neighbors = new List<GridNode>();
+
         for (int x = node.GridX - 1; x <= node.GridX + 1; x++)
         {
             if (x < 0 || x >= gridSizeX) continue;
@@ -158,7 +159,7 @@ public class Grid : MonoBehaviour
         }
 
         //Debug.Log("L'ultima getNeighbors ha generato una neighbor da " + neighbors.Count.ToString() + " elementi");
-        return neighbors;
+        return isRandom ? Shuffler.ShuffleCollection(neighbors, new System.Random()) : neighbors;
 
     }
 
@@ -208,7 +209,7 @@ public class Grid : MonoBehaviour
         {
             GridNode node = frontier.Dequeue();
 
-            foreach (GridNode neighbour in getNeighbors(node, node.grid))
+            foreach (GridNode neighbour in getNeighbors(node, node.grid, false))
             {
                 if (!explored.Contains(neighbour) && neighbour.walkable) 
                     return neighbour;
