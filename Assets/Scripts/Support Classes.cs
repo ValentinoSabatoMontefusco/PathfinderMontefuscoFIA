@@ -10,8 +10,24 @@ public enum searchAlgorithm
     Astar,
     UniformCost,
     DFS,
-    IDDFS
+    IDDFS,
+    RecursiveDFS,
+    BeamSearch,
+    IDAstar,
+    RBFS
 };
+
+public class DuplicateKeyComparer<TKey> : IComparer<TKey> where TKey : System.IComparable
+{
+    public int Compare(TKey x, TKey y)
+    {
+        int result = x.CompareTo(y);
+
+        // Handle equality as being greater to allow duplicate keys
+        return result == 0 ? 1 : result;
+    }
+}
+
 
 public static class Shuffler
 {

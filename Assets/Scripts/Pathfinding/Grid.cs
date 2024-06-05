@@ -155,7 +155,6 @@ public class Grid : MonoBehaviour
             }
 
                 
-
         }
 
         //Debug.Log("L'ultima getNeighbors ha generato una neighbor da " + neighbors.Count.ToString() + " elementi");

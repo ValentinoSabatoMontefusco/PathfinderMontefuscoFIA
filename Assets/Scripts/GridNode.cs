@@ -18,6 +18,7 @@ public class GridNode : Node, IHeapItem<GridNode>, IComparable<GridNode>
     // Pathfinding helpers
     public int movementPenalty;
     public bool walkable;
+    public Int16 depth;
     public int g_cost;
     public int h_cost;
     public int f_cost

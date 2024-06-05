@@ -92,15 +92,22 @@ public class PresentationLayer : MonoBehaviour
         GridNode nodeToDraw;
         PathRequest handledPR = drawQueue.Peek().pathRequest;
         nodeRadius = GetComponent<Grid>().nodeRadius;
+        yield return new WaitForSeconds(0.1f);
         while (drawQueue.Count > 0 && drawQueue.Peek().pathRequest.Equals(currentPathRequest))
         {
             drawReq = drawQueue.Dequeue();
             nodeToDraw = drawReq.gridnode;
+            
             if (nodeToDraw.drawnNode == null)
             {
                 nodeToDraw.drawnNode = Instantiate(nodePrefab, nodeToDraw.worldPos + Vector3.up * 0.5f, Quaternion.identity);
                 nodeToDraw.drawnNode.GetComponent<Renderer>().material = nodeMaterial;
-                if (nodeToDraw.f_cost != 0)
+                if (nodeToDraw.depth != 0)
+                {
+                    TextMeshPro TMPComp = nodeToDraw.drawnNode.GetComponentInChildren<TextMeshPro>();
+                    TMPComp.text = nodeToDraw.depth.ToString();
+                }
+                else if (nodeToDraw.f_cost != 0)
                 {
                     TextMeshPro TMPComp = nodeToDraw.drawnNode.GetComponentInChildren<TextMeshPro>();
                     TMPComp.text = nodeToDraw.f_cost.ToString();
@@ -109,6 +116,14 @@ public class PresentationLayer : MonoBehaviour
                         TMPComp.text += "\n" + nodeToDraw.g_cost.ToString() + " + " + nodeToDraw.h_cost.ToString();
                     }
                 }
+            } else
+            {
+                if (drawReq.nodeState == nodeStateEnum.Unexplored)
+                {
+                    nodeToDraw.destroyDrawnNode();
+                    continue;
+                }
+                    
             }
                 
             
