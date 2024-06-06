@@ -102,7 +102,12 @@ public class PresentationLayer : MonoBehaviour
             {
                 nodeToDraw.drawnNode = Instantiate(nodePrefab, nodeToDraw.worldPos + Vector3.up * 0.5f, Quaternion.identity);
                 nodeToDraw.drawnNode.GetComponent<Renderer>().material = nodeMaterial;
-                if (nodeToDraw.depth != 0)
+                if (nodeToDraw.f_cost > 0)
+                {
+                    TextMeshPro TMPComp = nodeToDraw.drawnNode.GetComponentInChildren<TextMeshPro>();
+                    TMPComp.text = nodeToDraw.F_cost.ToString();
+                }
+                else if (nodeToDraw.depth != 0)
                 {
                     TextMeshPro TMPComp = nodeToDraw.drawnNode.GetComponentInChildren<TextMeshPro>();
                     TMPComp.text = nodeToDraw.depth.ToString();

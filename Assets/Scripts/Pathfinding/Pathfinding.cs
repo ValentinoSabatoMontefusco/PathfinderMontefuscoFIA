@@ -101,17 +101,28 @@ public class Pathfinding : MonoBehaviour
         }
     }
 
-    private class NodeLabels
+    private class NodeLabels : IComparable<NodeLabels>
     {
         public Int16 depth = Int16.MaxValue;
         public int g_cost = 0;
         public int h_cost = 0;
         public int f_cost => g_cost + h_cost;
+        public int F_cost = 0; 
         public GridNode parent;
 
         public NodeLabels()
         {
             depth = short.MaxValue;
+        }
+
+        public int CompareTo(NodeLabels otherNL)
+        {
+            int f_value = Mathf.Max(f_cost, F_cost);
+            int other_f = Mathf.Max(otherNL.f_cost, otherNL.F_cost);
+            if (f_value != other_f)
+                return (f_value.CompareTo(other_f));
+
+            return h_cost.CompareTo(otherNL.h_cost);
         }
     }
 
@@ -470,7 +481,7 @@ public class Pathfinding : MonoBehaviour
 
         sw.Stop();
         UnityEngine.Debug.Log(AlgToString(searchAlg) + " path found in " + sw.ElapsedMilliseconds + "ms" +
-            " with " + explored.Count + "nodes in Explored. ") ;
+           " with " + explored.Count + "nodes in Explored. ") ;
         return BuildSolutionPath(startNode, targetNode, nodeTable);
 
 
@@ -487,7 +498,7 @@ public class Pathfinding : MonoBehaviour
         explored.Add(currentNode);
         if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Explored;
 
-        foreach(GridNode neighbour in Grid.getNeighbors(currentNode, grid, false))
+        foreach(GridNode neighbour in Grid.getNeighbors(currentNode, grid, true))
         {
             if (!explored.Contains(neighbour) && neighbour.walkable == true)
             {
@@ -558,19 +569,26 @@ public class Pathfinding : MonoBehaviour
 
     private static bool RecursiveBestFirst(GridNode currentNode, ExplorationInfo expInfo, int limit)
     {
+
+        return RecursiveBestFirst2(currentNode, expInfo, int.MaxValue).Item1;
+    }
+
+    private static (bool, int) RecursiveBestFirst2(GridNode currentNode, ExplorationInfo expInfo, int f_limit)
+    {
+
         expInfo.Unpackage(out GridNode targetNode, out GridNode[,] grid, out ICollection<GridNode> explored, out Dictionary<(int, int), NodeLabels> nodeTable);
 
         if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Current;
 
         if (currentNode == targetNode)
         {
-            return true;
+            return (true, f_limit);
         }
 
         explored.Add(currentNode);
         if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Explored;
 
-        SortedList<int, GridNode> successors = new(new DuplicateKeyComparer<int>());
+        SortedList<NodeLabels, GridNode> successors = new(new DuplicateKeyComparer<NodeLabels>());
 
         foreach (GridNode neighbour in Grid.getNeighbors(currentNode, grid, false))
         {
@@ -591,30 +609,49 @@ public class Pathfinding : MonoBehaviour
                     neighbour.g_cost = newCost;
                     neighbour.h_cost = nodeTable[neighbour.GridXY].h_cost;
 
-                    int newFCost = Mathf.Max(nodeTable[neighbour.GridXY].f_cost, nodeTable[currentNode.GridXY].f_cost);
-                    successors.Add(newFCost, neighbour);
                 }
+
+                int newFCost = Mathf.Max(nodeTable[neighbour.GridXY].f_cost, nodeTable[currentNode.GridXY].F_cost);
+                nodeTable[neighbour.GridXY].F_cost = newFCost;
+                // TENTATIVE
+                neighbour.F_cost = newFCost;
+                successors.Add(nodeTable[neighbour.GridXY], neighbour);
             }
         }
 
-        while (successors.Count > 0 && successors.Keys[0] <= limit)
+        while (successors.Count > 0)
         {
-            
+            if (successors.Keys[0].F_cost > f_limit)
+            {
+                explored.Remove(currentNode);
+                if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Unexplored;
+                return (false, successors.Keys[0].F_cost);
+            }
             int secondBest = int.MaxValue;
             if (successors.Count >= 2)
-                secondBest = successors.Keys[1];
+                secondBest = successors.Keys[1].F_cost;
             GridNode fittest = successors.Values[0];
+
+            if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Explored;
             //successors.RemoveAt(0);
-            if (RecursiveBestFirst(fittest, expInfo, Mathf.Min(limit, secondBest)))
-                return true;
+            bool isSuccess;
+            (isSuccess, nodeTable[fittest.GridXY].F_cost) = RecursiveBestFirst2(fittest, expInfo, Mathf.Min(f_limit, secondBest));
+
+            if (isSuccess)
+                return (true, f_limit);
+            fittest.F_cost = nodeTable[fittest.GridXY].F_cost;
+            if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Current;
+
+            successors.RemoveAt(0);
+            successors.Add(nodeTable[fittest.GridXY], fittest);
+            
+
         }
+
+
+        return (false, int.MaxValue);
         
-
-        return false;
-
     }
-
- 
 
     public static string AlgToString(searchAlgorithm searchAlg)
     {
@@ -689,6 +726,8 @@ public class Pathfinding : MonoBehaviour
             case searchAlgorithm.IDAstar: startNodeLabels.h_cost = Grid.getDistance(startNode, targetNode); break;
             default: break;
         }
+        if (searchAlg == searchAlgorithm.RBFS)
+            startNodeLabels.F_cost = startNodeLabels.f_cost;
         nodeTable.Add(startNode.GridXY, startNodeLabels);
         switch (searchAlg)
         {

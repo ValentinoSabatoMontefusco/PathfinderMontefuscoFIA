@@ -25,7 +25,7 @@ public class GridNode : Node, IHeapItem<GridNode>, IComparable<GridNode>
     {
         get { return g_cost + h_cost; }
     }
-    
+    public int F_cost;
 
     int heapIndex;
     //public bool deadEnd = false;

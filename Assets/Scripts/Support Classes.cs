@@ -17,7 +17,7 @@ public enum searchAlgorithm
     RBFS
 };
 
-public class DuplicateKeyComparer<TKey> : IComparer<TKey> where TKey : System.IComparable
+public class DuplicateKeyComparer<TKey> : IComparer<TKey> where TKey :  System.IComparable<TKey>
 {
     public int Compare(TKey x, TKey y)
     {
@@ -27,6 +27,7 @@ public class DuplicateKeyComparer<TKey> : IComparer<TKey> where TKey : System.IC
         return result == 0 ? 1 : result;
     }
 }
+
 
 
 public static class Shuffler
