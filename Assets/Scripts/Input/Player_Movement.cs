@@ -6,7 +6,7 @@ using UnityEngine.UIElements;
 public class Player_Movement : MonoBehaviour
 {
     public GameObject pathfindingReference;
-
+    private readonly float standardMS = 10;
     private Vector3[] path;
     private int currentIndex;
     public float moveSpeed = 10f;
@@ -155,7 +155,7 @@ public class Player_Movement : MonoBehaviour
                         movePenalty = Mathf.Max(movePenalty, nodePenalty);
                     }
                     float slowValue = (float) movePenalty / Grid.MAX_PENALTY;
-                    moveSpeed = Mathf.Lerp(3.33f, 10,  1 - slowValue);
+                    moveSpeed = Mathf.Lerp(standardMS * (float)(10f / (10f + Grid.MAX_PENALTY)), standardMS,  1 - slowValue);
                     animator.SetBool(isImpaired, true);
                 }
                 transform.position = Vector3.MoveTowards(transform.position, path[currentIndex] /*- Vector3.up * path[currentIndex].y*/, moveSpeed * Time.deltaTime);

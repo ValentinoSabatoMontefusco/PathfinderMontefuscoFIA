@@ -53,6 +53,11 @@ public class Heap<T> : ICollection where T : IHeapItem<T>
         entries = new Entry[maxSize];
     }
 
+    public Heap(int maxSize)
+    {
+        entries = new Entry[maxSize];
+    }
+
     public void Add (T item, int value)
     {
         item.HeapIndex = currentItemCount;

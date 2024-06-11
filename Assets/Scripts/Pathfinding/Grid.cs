@@ -32,7 +32,7 @@ public class Grid : MonoBehaviour
     public Transform player;
     
     int penaltyMin;
-    public static int MAX_PENALTY = 20;
+    public static int MAX_PENALTY = 40;
     
     //public List<GridNode[,]> gridService;
     //public static ThreadStart multiGrid;
@@ -72,7 +72,7 @@ public class Grid : MonoBehaviour
                 if (walkable)
                 {
                     if (Physics.CheckSphere(worldPos, nodeDiameter, slowerLayer))
-                        movePenalty = 20;
+                        movePenalty = MAX_PENALTY;
                     else 
                         movePenalty = 0;
                 }

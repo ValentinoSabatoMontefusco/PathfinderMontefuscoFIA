@@ -19,6 +19,8 @@ public class PresentationLayer : MonoBehaviour
     public float wait_time = 0.01f;
     private float nodeRadius;
 
+    private static GameObject content;
+
 
     Dictionary<nodeStateEnum, Color> colorTable = new Dictionary<nodeStateEnum, Color>()
     {
@@ -53,10 +55,19 @@ public class PresentationLayer : MonoBehaviour
 
     public void Awake()
     {
+        content = GameObject.Find("Content");
         onGraphRepChange += OnGraphRepChange;
         onQueueNonEmpty += startDrawing;
         GridNode.onNodeStateChange += enqueueNodeDraw;
         PathRequestManager.onPathRequestSet += HandlePathRequest;
+        Pathfinding.onStatsReady += DisplayStats;
+    }
+
+    private static void DisplayStats(string stats)
+    {
+        GameObject panel = GameObject.Find("BasicInfoPanel");
+        GameObject newPanel = Instantiate(panel, content.transform);
+        newPanel.GetComponent<TextMeshProUGUI>().text = stats;
     }
     public static void enqueueNodeDraw(GridNode gridnode)
     {
@@ -97,7 +108,7 @@ public class PresentationLayer : MonoBehaviour
         {
             drawReq = drawQueue.Dequeue();
             nodeToDraw = drawReq.gridnode;
-            
+
             if (nodeToDraw.drawnNode == null)
             {
                 nodeToDraw.drawnNode = Instantiate(nodePrefab, nodeToDraw.worldPos + Vector3.up * 0.5f, Quaternion.identity);
@@ -128,11 +139,11 @@ public class PresentationLayer : MonoBehaviour
                     nodeToDraw.destroyDrawnNode();
                     continue;
                 }
-                    
+
             }
-                
-            
-                
+
+
+
             Color color = colorTable[drawReq.nodeState];
             color.a = 0.3f;
             nodeToDraw.drawnNode.GetComponent<Renderer>().material.color = color;
@@ -140,6 +151,7 @@ public class PresentationLayer : MonoBehaviour
 
             if (wait_time > 0.01f)
                 yield return new WaitForSeconds(wait_time);
+          
         }
 
         yield return null;
@@ -149,7 +161,7 @@ public class PresentationLayer : MonoBehaviour
         PathRequestManager.FeedbackPathRequest(handledPR);
         if (drawQueue.Count > 0)
             onQueueNonEmpty?.Invoke();
-
+        
     }
 
     private void OnGraphRepChange()

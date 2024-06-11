@@ -6,13 +6,15 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Unity.VisualScripting;
 using System.Diagnostics;
 using Debug = UnityEngine.Debug;
+using System.Threading;
 
 public class Pathfinding : MonoBehaviour
 {
     public static Action onProcessingBegin;
     public static Action onProcessingEnd;
+    public static Action<string> onStatsReady;
 
-    
+
     //public readonly float maxIterationTicks;
     public static float maxIterationTicks; //= Time.fixedDeltaTime * Stopwatch.Frequency
     public static float waitTime = 0.05f;
@@ -26,31 +28,56 @@ public class Pathfinding : MonoBehaviour
     // Metodo che incamera le richieste di pathfinding e sceglie l'algoritmo opportuno cui passarle
     public static void StartPathFinding(PathRequest pathRequest)
     {
-        
+        Thread tentativeThread;
+
         GridNode startNode = Grid.getNodeFromPoint(pathRequest.startPos, pathRequest.grid);
         GridNode targetNode = Grid.getNodeFromPoint(pathRequest.targetPos, pathRequest.grid);
         Stopwatch sw = new();
-        List<GridNode> solutionPath;
-        if (pathRequest.searchType == searchAlgorithm.RecursiveDFS || pathRequest.searchType == searchAlgorithm.IDDFS || pathRequest.searchType == searchAlgorithm.RBFS)
-            solutionPath = RecursivePathFind(startNode, targetNode, pathRequest.grid, pathRequest.searchType);
+        List<GridNode> solutionPath = null;
+        if (!PresentationLayer.GraphRep)
+        {
+            tentativeThread = new Thread(() =>
+            {
+                try
+                {
+                    if (pathRequest.searchType == searchAlgorithm.RecursiveDFS || pathRequest.searchType == searchAlgorithm.IDDFS || pathRequest.searchType == searchAlgorithm.RBFS)
+                        solutionPath = RecursivePathFind(startNode, targetNode, pathRequest.grid, pathRequest.searchType);
+                    else
+                        solutionPath = PathFind(startNode, targetNode, pathRequest.grid, pathRequest.searchType);
+
+                }
+                catch (StackOverflowException e)
+                {
+                    Debug.Log("StackOverlowato EleGiggle");
+                }
+            });
+
+            tentativeThread.Start();
+            tentativeThread.Join();
+        }
         else
-            solutionPath = PathFind(startNode, targetNode, pathRequest.grid, pathRequest.searchType);
+        {
+            if (pathRequest.searchType == searchAlgorithm.RecursiveDFS || pathRequest.searchType == searchAlgorithm.IDDFS || pathRequest.searchType == searchAlgorithm.RBFS)
+                solutionPath = RecursivePathFind(startNode, targetNode, pathRequest.grid, pathRequest.searchType);
+            else
+                solutionPath = PathFind(startNode, targetNode, pathRequest.grid, pathRequest.searchType);
+        }
         if (solutionPath != null)
             PathRequestManager.FinishedProcessing(new PathResult(pathToWaypoints(solutionPath), true, pathRequest));
         else
             PathRequestManager.FinishedProcessing(new PathResult(null, false, pathRequest));
-        
+
         return;
     }
 
-    
+
 
     private delegate void startNodeInitialization();
     private delegate void ExplorationPolicy(GridNode currentNode, GridNode neighbour, ExplorationInfo explorationInfo);
     private delegate void PerFrontierNodePolicy(GridNode currentNode, ExplorationInfo explorationInfo);
     private delegate bool RecursivePolicy(GridNode currentNode, ExplorationInfo explorationInfo, int param);
 
-   
+
     private class ExplorationInfo
     {
         public GridNode startNode { get; set; }
@@ -84,7 +111,7 @@ public class Pathfinding : MonoBehaviour
         }
         public void Unpackage(out GridNode targetNode, out IFrontier<GridNode> frontier, out ICollection<GridNode> explored, out Dictionary<(int, int), NodeLabels> nodeTable)
         {
- 
+
             targetNode = this.targetNode;
             frontier = this.frontier;
             explored = this.explored;
@@ -107,7 +134,7 @@ public class Pathfinding : MonoBehaviour
         public int g_cost = 0;
         public int h_cost = 0;
         public int f_cost => g_cost + h_cost;
-        public int F_cost = 0; 
+        public int F_cost = 0;
         public GridNode parent;
 
         public NodeLabels()
@@ -130,7 +157,7 @@ public class Pathfinding : MonoBehaviour
     private static void AStarPolicy(GridNode currentNode, GridNode neighbour, ExplorationInfo expInfo)
     {
         expInfo.Unpackage(out GridNode targetNode, out IFrontier<GridNode> frontier, out ICollection<GridNode> explored, out Dictionary<(int, int), NodeLabels> nodeTable);
-        
+
 
         if (!explored.Contains(neighbour) && neighbour.walkable == true)
         {
@@ -182,7 +209,7 @@ public class Pathfinding : MonoBehaviour
     {
         expInfo.Unpackage(out GridNode targetNode, out IFrontier<GridNode> frontier, out ICollection<GridNode> explored, out Dictionary<(int, int), NodeLabels> nodeTable);
         SortedList<int, GridNode> beamList = expInfo.beamSearchList;
-        
+
 
         if (!explored.Contains(neighbour) && neighbour.walkable == true)
         {
@@ -203,7 +230,7 @@ public class Pathfinding : MonoBehaviour
                 neighbour.g_cost = newCost;
                 neighbour.h_cost = nodeTable[neighbour.GridXY].h_cost;
 
-                
+
 
                 if (!frontier.Contains(neighbour))
                 {
@@ -229,11 +256,11 @@ public class Pathfinding : MonoBehaviour
             if (!nodeTable.ContainsKey(neighbour.GridXY))
             {
                 nodeTable.Add(neighbour.GridXY, new NodeLabels());
-                
+
                 nodeTable[neighbour.GridXY].h_cost = Grid.getDistance(neighbour, targetNode);
                 nodeTable[neighbour.GridXY].parent = currentNode;
 
-                
+
 
                 if (!frontier.Contains(neighbour))
                 {
@@ -292,11 +319,11 @@ public class Pathfinding : MonoBehaviour
 
         }
     }
-    
 
-   
 
-    public static List<GridNode> PathFind(GridNode startNode, GridNode targetNode, GridNode[,] grid, searchAlgorithm searchAlg)  
+
+
+    public static List<GridNode> PathFind(GridNode startNode, GridNode targetNode, GridNode[,] grid, searchAlgorithm searchAlg)
     {
         Stopwatch sw = new Stopwatch(); // Valutare di separare
         HashSet<GridNode> explored = new();
@@ -336,18 +363,21 @@ public class Pathfinding : MonoBehaviour
 
             if (currentNode == targetNode)
             {
-                
+
                 sw.Stop();
-                UnityEngine.Debug.Log(AlgToString(searchAlg) + " path found in " + sw.ElapsedMilliseconds + "ms" +
-                    " with " + explored.Count + "nodes in Explored. " + frontier.Count() + "nodes  in Frontier.\n" +
-                    "Costo di cammino complessivo: " + (nodeTable[currentNode.GridXY].g_cost + 10) / 10);
-                return BuildSolutionPath(startNode, targetNode, nodeTable);
-                
+                List<GridNode> solutionPath = BuildSolutionPath(startNode, targetNode, nodeTable);
+                string stats;
+                stats = AlgToString(searchAlg) + " path found in " + sw.ElapsedMilliseconds + "ms\n" +
+                     + explored.Count + "nodes in Explored. " + frontier.Count() + "nodes  in Frontier.\n" +
+                    "Overall walking cost: " + (nodeTable[currentNode.GridXY].g_cost + 10) / 10;
+                onStatsReady?.Invoke(stats);
+                return solutionPath;
+
             }
 
             explored.Add(currentNode);
 
-            
+
             foreach (GridNode neighbour in Grid.getNeighbors(currentNode, grid, false))
             {
                 explorationPolicy(currentNode, neighbour, explorationInfo);
@@ -382,9 +412,12 @@ public class Pathfinding : MonoBehaviour
                 if (currentNode == targetNode)
                 {
                     sw.Stop();
-                    UnityEngine.Debug.Log("IDA* path found in " + sw.ElapsedMilliseconds + "ms" +
-                    " with " + explored.Count + "nodes in Explored. " + frontier.Count() + "nodes  in Frontier.\n" +
-                    "Costo di cammino complessivo: " + (nodeTable[currentNode.GridXY].g_cost + 10) / 10);
+                    UnityEngine.Debug.Log("IDA* path found in " + sw.ElapsedMilliseconds + "ms");
+                    string stats;
+                    stats = "IDA* path found in " + sw.ElapsedMilliseconds + "ms\n" +
+                         +explored.Count + "nodes in Explored. " + frontier.Count() + "nodes  in Frontier.\n" +
+                        "Overall walking cost: " + (nodeTable[currentNode.GridXY].g_cost + 10) / 10;
+                    onStatsReady?.Invoke(stats);
                     return BuildSolutionPath(startNode, targetNode, nodeTable);
                 }
 
@@ -435,17 +468,17 @@ public class Pathfinding : MonoBehaviour
             }
 
             if (PresentationLayer.GraphRep)
-                foreach(GridNode node in explored)
+                foreach (GridNode node in explored)
                 {
                     node.nodestate = nodeStateEnum.Unexplored;
                 }
-            
+
 
             if (minFCost == nextBestCutValue)
                 break;
 
             explored.Clear();
-            
+
             nodeTable.Clear();
             nodeTable.Add(startNode.GridXY, new NodeLabels());
             nodeTable[startNode.GridXY].g_cost = 0;
@@ -466,13 +499,13 @@ public class Pathfinding : MonoBehaviour
         HashSet<GridNode> explored = new();
         Dictionary<(int, int), NodeLabels> nodeTable = new();
         RecursivePolicy recursivePolicy = ChooseRecursivePolicy(searchAlg);
-        
+
         if (!targetNode.walkable)
             targetNode = Grid.closestWalkableNode(targetNode);
 
         ExplorationInfo explorationInfo = new(targetNode, grid, explored, nodeTable);
-        
-        
+
+
 
         InitializeFrontier(startNode, targetNode, null, nodeTable, searchAlg);
 
@@ -480,8 +513,14 @@ public class Pathfinding : MonoBehaviour
             return null;
 
         sw.Stop();
-        UnityEngine.Debug.Log(AlgToString(searchAlg) + " path found in " + sw.ElapsedMilliseconds + "ms" +
-           " with " + explored.Count + "nodes in Explored. ") ;
+        List<GridNode> solutionPath = BuildSolutionPath(startNode, targetNode, nodeTable);
+        string stats;
+        stats = AlgToString(searchAlg) + " path found in " + sw.ElapsedMilliseconds + "ms\n" +
+             +explored.Count + "nodes in Explored.\n" +
+            "Overall walking cost: " + (nodeTable[targetNode.GridXY].g_cost + 10) / 10;
+        onStatsReady?.Invoke(stats);
+        //UnityEngine.Debug.Log(AlgToString(searchAlg) + " path found in " + sw.ElapsedMilliseconds + "ms" +
+        //   " with " + explored.Count + "nodes in Explored. ");
         return BuildSolutionPath(startNode, targetNode, nodeTable);
 
 
@@ -498,7 +537,7 @@ public class Pathfinding : MonoBehaviour
         explored.Add(currentNode);
         if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Explored;
 
-        foreach(GridNode neighbour in Grid.getNeighbors(currentNode, grid, true))
+        foreach (GridNode neighbour in Grid.getNeighbors(currentNode, grid, true))
         {
             if (!explored.Contains(neighbour) && neighbour.walkable == true)
             {
@@ -523,7 +562,7 @@ public class Pathfinding : MonoBehaviour
         {
             return true;
         }
-        
+
         explored.Add(currentNode);
         if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Explored;
 
@@ -535,7 +574,7 @@ public class Pathfinding : MonoBehaviour
         ICollection<GridNode> neighbours = Grid.getNeighbors(currentNode, grid, true);
         neighbours = OrderNeighboursByDepth(neighbours, currentNode, nodeTable);
 
-        foreach(GridNode neighbour in neighbours)
+        foreach (GridNode neighbour in neighbours)
         {
             if (!explored.Contains(neighbour) && neighbour.walkable == true)
             {
@@ -543,12 +582,12 @@ public class Pathfinding : MonoBehaviour
                     return true;
             }
         }
-        
+
         return false;
     }
 
     private static bool IterativeDeepeningRecDFS(GridNode currentNode, ExplorationInfo expInfo, int cutValue)
-    { 
+    {
         for (int i = 0; i < expInfo.grid.Length; i++)
         {
             cutValue = i;
@@ -559,7 +598,7 @@ public class Pathfinding : MonoBehaviour
                     node.nodestate = nodeStateEnum.Unexplored;
                 }
             }
-            
+
             expInfo.explored.Clear();
             if (RecursiveIDDFS(currentNode, expInfo, cutValue))
                 return true;
@@ -644,13 +683,13 @@ public class Pathfinding : MonoBehaviour
 
             successors.RemoveAt(0);
             successors.Add(nodeTable[fittest.GridXY], fittest);
-            
+
 
         }
 
 
         return (false, int.MaxValue);
-        
+
     }
 
     public static string AlgToString(searchAlgorithm searchAlg)
@@ -710,7 +749,7 @@ public class Pathfinding : MonoBehaviour
         }
     }
 
-   
+
 
     private static void InitializeFrontier(GridNode startNode, GridNode targetNode, IFrontier<GridNode> frontier, Dictionary<(int, int), NodeLabels> nodeTable, searchAlgorithm searchAlg)
     {
@@ -738,11 +777,11 @@ public class Pathfinding : MonoBehaviour
             case searchAlgorithm.UniformCost: frontier.Add(startNode, nodeTable[startNode.GridXY].g_cost); break;
             case searchAlgorithm.RecursiveDFS:
             case searchAlgorithm.IDDFS:
-            case searchAlgorithm.RBFS:  break;
+            case searchAlgorithm.RBFS: break;
             default: frontier.Add(startNode); break;
         }
         startNode.nodestate = nodeStateEnum.Frontier;
-        
+
     }
 
 
@@ -761,6 +800,15 @@ public class Pathfinding : MonoBehaviour
             currentNode = nodeTable[currentNode.GridXY].parent;
             if (PresentationLayer.GraphRep)
                 currentNode.nodestate = nodeStateEnum.Solution;
+        }
+
+        if (nodeTable[youngest.GridXY].g_cost == 0)
+        {
+            nodeTable[eldest.GridXY].g_cost = 0;
+            for (int i = path.Count - 1; i > 0; i--)
+            {
+                nodeTable[path[i - 1].GridXY].g_cost = nodeTable[path[i].GridXY].g_cost + Grid.getDistance(path[i], path[i - 1]) + path[i-1].movementPenalty;
+            }
         }
 
         return path;
@@ -790,7 +838,7 @@ public class Pathfinding : MonoBehaviour
     private static ICollection<GridNode> OrderNeighboursByDepth(ICollection<GridNode> neighbourList, GridNode currentNode, Dictionary<(int, int), NodeLabels> nodeTable)
     {
         SortedList<Int16, GridNode> depthList = new(new DuplicateKeyComparer<Int16>());
-        foreach(GridNode neighbour in neighbourList)
+        foreach (GridNode neighbour in neighbourList)
         {
             if (!nodeTable.ContainsKey(neighbour.GridXY))
             {
@@ -804,7 +852,7 @@ public class Pathfinding : MonoBehaviour
                 nodeTable[neighbour.GridXY].depth = (short)(nodeTable[currentNode.GridXY].depth + 1);
                 neighbour.depth = (short)(nodeTable[currentNode.GridXY].depth + 1);
             }
-                
+
             if (nodeTable[neighbour.GridXY].parent == null)
                 nodeTable[neighbour.GridXY].parent = currentNode;
 
@@ -817,9 +865,114 @@ public class Pathfinding : MonoBehaviour
 
             newList.Add(depthList.Values[i]);
         }
- 
+
         return newList;
     }
-    
+
+    // VALUTARE SE ç_ç
+    public static List<GridNode> SMAStarPathFind(GridNode startNode, GridNode targetNode, GridNode[,] grid, searchAlgorithm searchAlg)
+    {
+        Stopwatch sw = new Stopwatch(); // Valutare di separare
+        HashSet<GridNode> explored = new();
+        IFrontier<GridNode> frontier;
+        Dictionary<(int, int), NodeLabels> nodeTable = new();
+        ExplorationPolicy explorationPolicy;
+        PerFrontierNodePolicy perNodePolicy;
+
+        if (!targetNode.walkable)
+            targetNode = Grid.closestWalkableNode(targetNode);
+
+        sw.Restart();
+
+        frontier = ChooseFrontierDataStructure(searchAlg);
+        explorationPolicy = ChooseExplorationPolicy(searchAlg);
+        InitializeFrontier(startNode, targetNode, frontier, nodeTable, searchAlg);
+
+        GridNode bestForgotten;
+
+
+
+        GridNode currentNode;
+        ExplorationInfo explorationInfo = new ExplorationInfo(targetNode, frontier, explored, nodeTable);
+
+
+        while (frontier.Count() > 0)
+        {
+            currentNode = frontier.Extract();
+            if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Current;
+
+            if (currentNode == targetNode)
+            {
+
+                sw.Stop();
+                UnityEngine.Debug.Log(AlgToString(searchAlg) + " path found in " + sw.ElapsedMilliseconds + "ms" +
+                    " with " + explored.Count + "nodes in Explored. " + frontier.Count() + "nodes  in Frontier.\n" +
+                    "Costo di cammino complessivo: " + (nodeTable[currentNode.GridXY].g_cost + 10) / 10);
+                return BuildSolutionPath(startNode, targetNode, nodeTable);
+
+            }
+
+            explored.Add(currentNode);
+
+
+            foreach (GridNode neighbour in Grid.getNeighbors(currentNode, grid, false))
+            {
+                if (!explored.Contains(neighbour) && neighbour.walkable == true)
+                {
+                    int newCost = nodeTable[currentNode.GridXY].g_cost + Grid.getDistance(currentNode, neighbour) + neighbour.movementPenalty;
+                    if (!nodeTable.ContainsKey(neighbour.GridXY) || (nodeTable.ContainsKey(neighbour.GridXY) && newCost < nodeTable[neighbour.GridXY].g_cost))
+                    {
+                        if (!nodeTable.ContainsKey(neighbour.GridXY))
+                        {
+                            nodeTable.Add(neighbour.GridXY, new NodeLabels());
+                        }
+                        nodeTable[neighbour.GridXY].g_cost = newCost;
+                        nodeTable[neighbour.GridXY].h_cost = Grid.getDistance(neighbour, targetNode);
+                        nodeTable[neighbour.GridXY].parent = currentNode;
+
+                        nodeTable[neighbour.GridXY].F_cost = Mathf.Max(nodeTable[neighbour.GridXY].f_cost, nodeTable[currentNode.GridXY].f_cost);
+
+                        // TENTATIVE
+                        neighbour.g_cost = newCost;
+                        neighbour.h_cost = nodeTable[neighbour.GridXY].h_cost;
+
+                        if (frontier.Contains(neighbour))
+                        {
+                            frontier.UpdateItem(neighbour, nodeTable[neighbour.GridXY].F_cost);
+                            if (PresentationLayer.GraphRep) neighbour.nodestate = nodeStateEnum.Frontier;
+                        }
+                        else
+                        {
+                            if (frontier.Count() < 100)
+                            {
+                                frontier.Add(neighbour, nodeTable[neighbour.GridXY].F_cost, nodeTable[neighbour.GridXY].h_cost);
+                                if (PresentationLayer.GraphRep) neighbour.nodestate = nodeStateEnum.Frontier;
+                            }
+                            else
+                            {
+                                frontier.Add(neighbour, nodeTable[neighbour.GridXY].F_cost, nodeTable[neighbour.GridXY].h_cost);
+                                if (PresentationLayer.GraphRep) neighbour.nodestate = nodeStateEnum.Frontier;
+                            }
+                        }
+
+                        if (!frontier.Contains(neighbour) && frontier.Count() < 100)
+                        {
+                            
+                        }
+                        else
+                        {
+                            
+                        }
+                    }
+
+                }
+            }
+
+            
+
+            if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Explored;
+        }
+        return null;
+    }
 
 }
