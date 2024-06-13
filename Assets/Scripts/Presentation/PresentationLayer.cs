@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
 public class PresentationLayer : MonoBehaviour
 {
@@ -15,11 +16,14 @@ public class PresentationLayer : MonoBehaviour
     GameObject nodePrefab;
     [SerializeField]
     Material nodeMaterial;
+    [SerializeField]
+    GameObject infoPanel;
 
     public float wait_time = 0.01f;
     private float nodeRadius;
 
     private static GameObject content;
+    private static Queue<(string, searchAlgorithm)> statsQueue = new();
 
 
     Dictionary<nodeStateEnum, Color> colorTable = new Dictionary<nodeStateEnum, Color>()
@@ -60,14 +64,26 @@ public class PresentationLayer : MonoBehaviour
         onQueueNonEmpty += startDrawing;
         GridNode.onNodeStateChange += enqueueNodeDraw;
         PathRequestManager.onPathRequestSet += HandlePathRequest;
-        Pathfinding.onStatsReady += DisplayStats;
+        Pathfinding.onStatsReady += EnqueueStats;
     }
 
-    private static void DisplayStats(string stats)
+    private void Update()
     {
-        GameObject panel = GameObject.Find("BasicInfoPanel");
-        GameObject newPanel = Instantiate(panel, content.transform);
-        newPanel.GetComponent<TextMeshProUGUI>().text = stats;
+        if (statsQueue.Count > 0)
+        {
+            GameObject newPanel = Instantiate(infoPanel, content.transform);
+            (string, searchAlgorithm) statBundle = statsQueue.Dequeue();
+            newPanel.GetComponentInChildren<TextMeshProUGUI>().text = statBundle.Item1;
+            Color newColor = algorithmColors[statBundle.Item2];
+            newColor.a = 0.55f;
+            newPanel.GetComponent<Image>().color = newColor;
+            
+        }
+    }
+    
+    private void EnqueueStats(string stats, searchAlgorithm searchAlg)
+    {
+        statsQueue.Enqueue((stats, searchAlg));
     }
     public static void enqueueNodeDraw(GridNode gridnode)
     {
@@ -192,4 +208,18 @@ public class PresentationLayer : MonoBehaviour
     {
         wait_time = newTime;
     }
+
+    public static Dictionary<searchAlgorithm, Color> algorithmColors = new Dictionary<searchAlgorithm, Color>
+    {
+        { searchAlgorithm.BFGreedy, new Color(0.70f,0.70f,0.00f) },
+        { searchAlgorithm.BFS, new Color(0.67f,0.15f,0.31f) },
+        { searchAlgorithm.Astar, Color.blue },
+        { searchAlgorithm.UniformCost, new Color(1.00f,0.40f,0.10f) },
+        { searchAlgorithm.DFS, new Color(0.30f,0.30f,0.00f) },
+        { searchAlgorithm.IDDFS, new Color(0.80f,0.40f,0.00f) },
+        { searchAlgorithm.RecursiveDFS, new Color(0.15f,0.30f,0.00f) },
+        { searchAlgorithm.BeamSearch, new Color(0.84f,0.80f,1.00f) },
+        { searchAlgorithm.IDAstar, new Color(0.30f,1.00f,0.88f) },
+        { searchAlgorithm.RBFS, new Color(0.60f,0.00f,0.90f) }
+    };
 }

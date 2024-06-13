@@ -12,7 +12,7 @@ public class Pathfinding : MonoBehaviour
 {
     public static Action onProcessingBegin;
     public static Action onProcessingEnd;
-    public static Action<string> onStatsReady;
+    public static Action<string, searchAlgorithm> onStatsReady;
 
 
     //public readonly float maxIterationTicks;
@@ -48,7 +48,7 @@ public class Pathfinding : MonoBehaviour
                 }
                 catch (StackOverflowException e)
                 {
-                    Debug.Log("StackOverlowato EleGiggle");
+                    Debug.Log("StackOverflowato EleGiggle");
                 }
             });
 
@@ -370,7 +370,7 @@ public class Pathfinding : MonoBehaviour
                 stats = AlgToString(searchAlg) + " path found in " + sw.ElapsedMilliseconds + "ms\n" +
                      + explored.Count + "nodes in Explored. " + frontier.Count() + "nodes  in Frontier.\n" +
                     "Overall walking cost: " + (nodeTable[currentNode.GridXY].g_cost + 10) / 10;
-                onStatsReady?.Invoke(stats);
+                onStatsReady?.Invoke(stats, searchAlg);
                 return solutionPath;
 
             }
@@ -417,7 +417,7 @@ public class Pathfinding : MonoBehaviour
                     stats = "IDA* path found in " + sw.ElapsedMilliseconds + "ms\n" +
                          +explored.Count + "nodes in Explored. " + frontier.Count() + "nodes  in Frontier.\n" +
                         "Overall walking cost: " + (nodeTable[currentNode.GridXY].g_cost + 10) / 10;
-                    onStatsReady?.Invoke(stats);
+                    onStatsReady?.Invoke(stats, searchAlgorithm.IDAstar);
                     return BuildSolutionPath(startNode, targetNode, nodeTable);
                 }
 
@@ -518,7 +518,7 @@ public class Pathfinding : MonoBehaviour
         stats = AlgToString(searchAlg) + " path found in " + sw.ElapsedMilliseconds + "ms\n" +
              +explored.Count + "nodes in Explored.\n" +
             "Overall walking cost: " + (nodeTable[targetNode.GridXY].g_cost + 10) / 10;
-        onStatsReady?.Invoke(stats);
+        onStatsReady?.Invoke(stats, searchAlg);
         //UnityEngine.Debug.Log(AlgToString(searchAlg) + " path found in " + sw.ElapsedMilliseconds + "ms" +
         //   " with " + explored.Count + "nodes in Explored. ");
         return BuildSolutionPath(startNode, targetNode, nodeTable);
