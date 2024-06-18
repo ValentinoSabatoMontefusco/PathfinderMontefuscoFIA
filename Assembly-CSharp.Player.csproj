@@ -78,6 +78,7 @@
     <Compile Include="Assets\Scripts\Pathfinding\Heap.cs" />
     <Compile Include="Assets\Scripts\Pathfinding\Pathfinding.cs" />
     <Compile Include="Assets\Scripts\Presentation\PresentationLayer.cs" />
+    <Compile Include="Assets\Old Torch\Script\FlickLight.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />

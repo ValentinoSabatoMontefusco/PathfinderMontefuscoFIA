@@ -349,6 +349,7 @@
 -r:"Library/Bee/artifacts/1900b0aEDbg.dag/UnityEditor.UI.ref.dll"
 -r:"Library/Bee/artifacts/1900b0aEDbg.dag/UnityEngine.UI.ref.dll"
 "Assets/AurynSky/Gems Ultimate Pack/Scripts/AnimationScript.cs"
+"Assets/Old Torch/Script/FlickLight.cs"
 "Assets/Scripts/Camera_Movement.cs"
 "Assets/Scripts/GridNode.cs"
 "Assets/Scripts/Input/Camera_Movement.cs"

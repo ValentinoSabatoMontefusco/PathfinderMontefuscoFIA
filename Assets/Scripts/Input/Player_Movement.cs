@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
 public class Player_Movement : MonoBehaviour
@@ -10,7 +11,8 @@ public class Player_Movement : MonoBehaviour
     private Vector3[] path;
     private int currentIndex;
     public float moveSpeed = 10f;
-    public bool isSelected;
+    private bool unitSelected = false;
+    public bool isSelected { get { return unitSelected; } set { unitSelected = value; transform.Find("SelectionCircle").gameObject.SetActive(unitSelected); } } 
     public searchAlgorithm searchType;
     Color originalColor;
     public LayerMask slowerMask;
@@ -89,6 +91,7 @@ public class Player_Movement : MonoBehaviour
             {
                 StopAllCoroutines();
                 transform.position = new Vector3(-23.5f, 0, -23.5f);
+                animator.SetBool(isMoving, false);
             }
        }
 

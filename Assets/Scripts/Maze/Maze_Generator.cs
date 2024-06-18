@@ -50,11 +50,17 @@ public class Maze_Generator : MonoBehaviour
         sw.Start();
         frontier.Push(startNode);
 
+
+
+        int torchCount = 1;
+
+
         while (explored.Count != (MazeSizeX*MazeSizeY))
         {
             currentNode = frontier.Pop();
             currentNode.MNState = MazeNodeState.Visited;
             //currentNode.nodeItem.GetComponent<MazeCell_Behaviour>().changeFloorColor(currentNode.MNState);
+            torchCount--;
 
             MazeNode nextNode = DFSMazeNeighbour(currentNode, explored);
             if (nextNode != null) {
@@ -63,20 +69,24 @@ public class Maze_Generator : MonoBehaviour
                 {
                     currentNode.nodeItem.GetComponent<MazeCell_Behaviour>().RemoveWall(1);
                     nextNode.nodeItem.GetComponent<MazeCell_Behaviour>().RemoveWall(2);
+                    if (torchCount == 0) currentNode.nodeItem.transform.Find("NTorch").gameObject.SetActive(true);
                 } else if (nextNode.GridX == currentNode.GridX -1)
                 {
                     currentNode.nodeItem.GetComponent<MazeCell_Behaviour>().RemoveWall(2);
                     nextNode.nodeItem.GetComponent<MazeCell_Behaviour>().RemoveWall(1);
+                    if (torchCount == 0) currentNode.nodeItem.transform.Find("STorch").gameObject.SetActive(true);
                 }
                 else if (nextNode.GridY == currentNode.GridY + 1)
                 {
                     currentNode.nodeItem.GetComponent<MazeCell_Behaviour>().RemoveWall(0);
                     nextNode.nodeItem.GetComponent<MazeCell_Behaviour>().RemoveWall(3);
+                    if (torchCount == 0) currentNode.nodeItem.transform.Find("WTorch").gameObject.SetActive(true);
                 }
                 else if (nextNode.GridY == currentNode.GridY - 1)
                 {
                     currentNode.nodeItem.GetComponent<MazeCell_Behaviour>().RemoveWall(3);
                     nextNode.nodeItem.GetComponent<MazeCell_Behaviour>().RemoveWall(0);
+                    if (torchCount == 0) currentNode.nodeItem.transform.Find("ETorch").gameObject.SetActive(true);
                 }
 
             } else
@@ -91,9 +101,16 @@ public class Maze_Generator : MonoBehaviour
                     nextNode = (MazeNode) nextNode.parent;
 
                 }
-
+                
             }
 
+            if (torchCount == 0)
+            {
+                placeTorch(currentNode);
+                torchCount = 15;
+            }
+                
+            
             explored.Add(currentNode);
             frontier.Push(nextNode);
 
@@ -191,4 +208,19 @@ public class Maze_Generator : MonoBehaviour
             return null;
 
     }
+
+    private void placeTorch(MazeNode node)
+    {
+        char[] NEWS = { 'N', 'E', 'W', 'S' };
+        foreach (char c in NEWS)
+        {
+            if (node.nodeItem.transform.Find(c + "Wall").gameObject.activeSelf)
+            {
+                node.nodeItem.transform.Find(c + "Torch").gameObject.SetActive(true);
+                goto EndMethod;
+            }
+        }
+        EndMethod: return;
+    }
+    
 }

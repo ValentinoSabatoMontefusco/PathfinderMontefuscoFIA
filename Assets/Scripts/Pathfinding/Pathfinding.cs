@@ -367,8 +367,8 @@ public class Pathfinding : MonoBehaviour
                 sw.Stop();
                 List<GridNode> solutionPath = BuildSolutionPath(startNode, targetNode, nodeTable);
                 string stats;
-                stats = AlgToString(searchAlg) + " path found in " + sw.ElapsedMilliseconds + "ms\n" +
-                     + explored.Count + "nodes in Explored. " + frontier.Count() + "nodes  in Frontier.\n" +
+                stats = AlgToString(searchAlg) + " path found in " + sw.ElapsedMilliseconds + " ms\n" +
+                     + explored.Count + " nodes in Explored. " + frontier.Count() + " nodes  in Frontier.\n" +
                     "Overall walking cost: " + (nodeTable[currentNode.GridXY].g_cost + 10) / 10;
                 onStatsReady?.Invoke(stats, searchAlg);
                 return solutionPath;
@@ -412,10 +412,10 @@ public class Pathfinding : MonoBehaviour
                 if (currentNode == targetNode)
                 {
                     sw.Stop();
-                    UnityEngine.Debug.Log("IDA* path found in " + sw.ElapsedMilliseconds + "ms");
+                    UnityEngine.Debug.Log("IDA* path found in " + sw.ElapsedMilliseconds + " ms");
                     string stats;
-                    stats = "IDA* path found in " + sw.ElapsedMilliseconds + "ms\n" +
-                         +explored.Count + "nodes in Explored. " + frontier.Count() + "nodes  in Frontier.\n" +
+                    stats = "IDA* path found in " + sw.ElapsedMilliseconds + " ms\n" +
+                         +explored.Count + " nodes in Explored. " + frontier.Count() + " nodes  in Frontier.\n" +
                         "Overall walking cost: " + (nodeTable[currentNode.GridXY].g_cost + 10) / 10;
                     onStatsReady?.Invoke(stats, searchAlgorithm.IDAstar);
                     return BuildSolutionPath(startNode, targetNode, nodeTable);
@@ -516,11 +516,10 @@ public class Pathfinding : MonoBehaviour
         List<GridNode> solutionPath = BuildSolutionPath(startNode, targetNode, nodeTable);
         string stats;
         stats = AlgToString(searchAlg) + " path found in " + sw.ElapsedMilliseconds + "ms\n" +
-             +explored.Count + "nodes in Explored.\n" +
+             +explored.Count + " nodes in Explored.\n" +
             "Overall walking cost: " + (nodeTable[targetNode.GridXY].g_cost + 10) / 10;
         onStatsReady?.Invoke(stats, searchAlg);
-        //UnityEngine.Debug.Log(AlgToString(searchAlg) + " path found in " + sw.ElapsedMilliseconds + "ms" +
-        //   " with " + explored.Count + "nodes in Explored. ");
+        
         return BuildSolutionPath(startNode, targetNode, nodeTable);
 
 
@@ -705,6 +704,7 @@ public class Pathfinding : MonoBehaviour
             case searchAlgorithm.IDDFS: return "Iterative Depth First Search";
             case searchAlgorithm.IDAstar: return "Iterative Deepening A*";
             case searchAlgorithm.RBFS: return "Recursive Best First Search";
+            case searchAlgorithm.BeamSearch: return "Beam Search";
             default: return "Unknown Algorithm";
         }
     }
@@ -906,8 +906,8 @@ public class Pathfinding : MonoBehaviour
 
                 sw.Stop();
                 UnityEngine.Debug.Log(AlgToString(searchAlg) + " path found in " + sw.ElapsedMilliseconds + "ms" +
-                    " with " + explored.Count + "nodes in Explored. " + frontier.Count() + "nodes  in Frontier.\n" +
-                    "Costo di cammino complessivo: " + (nodeTable[currentNode.GridXY].g_cost + 10) / 10);
+                    " with " + explored.Count + " nodes in Explored. " + frontier.Count() + " nodes  in Frontier.\n" +
+                    "Overall walking cost: " + (nodeTable[currentNode.GridXY].g_cost + 10) / 10);
                 return BuildSolutionPath(startNode, targetNode, nodeTable);
 
             }
