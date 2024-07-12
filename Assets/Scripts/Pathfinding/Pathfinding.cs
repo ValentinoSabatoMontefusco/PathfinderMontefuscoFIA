@@ -30,13 +30,13 @@ public class Pathfinding : MonoBehaviour
     {
         Thread tentativeThread;
 
-        GridNode startNode = Grid.getNodeFromPoint(pathRequest.startPos, pathRequest.grid);
+        GridNode startNode = Grid.getNodeFromPoint(pathRequest.startPos, pathRequest.grid);                 // Conversione di coordinate di spazio continuo in nodi griglia
         GridNode targetNode = Grid.getNodeFromPoint(pathRequest.targetPos, pathRequest.grid);
         Stopwatch sw = new();
-        List<GridNode> solutionPath = null;
+        List<GridNode> solutionPath = null;                                                                 // Lista di nodi del cammino trovato da passare all'attuatore
         if (!PresentationLayer.GraphRep)
         {
-            tentativeThread = new Thread(() =>
+            tentativeThread = new Thread(() =>                                                              // Asincronia grezza per catturare Stack Overflow senza interruzione esecuzione
             {
                 try
                 {
@@ -48,7 +48,7 @@ public class Pathfinding : MonoBehaviour
                 }
                 catch (StackOverflowException e)
                 {
-                    Debug.Log("StackOverflowato EleGiggle");
+                    Debug.Log("StackOverflow verificata");
                 }
             });
 
@@ -71,6 +71,7 @@ public class Pathfinding : MonoBehaviour
     }
 
 
+    // Sistema di delegati per favorire il riuso del codice
 
     private delegate void startNodeInitialization();
     private delegate void ExplorationPolicy(GridNode currentNode, GridNode neighbour, ExplorationInfo explorationInfo);
@@ -78,7 +79,7 @@ public class Pathfinding : MonoBehaviour
     private delegate bool RecursivePolicy(GridNode currentNode, ExplorationInfo explorationInfo, int param);
 
 
-    private class ExplorationInfo
+    private class ExplorationInfo                                       // Classe ausiliaria contenente pacchetti di informazioni da passare ai delegati
     {
         public GridNode startNode { get; set; }
         public GridNode targetNode { get; set; }
@@ -128,7 +129,7 @@ public class Pathfinding : MonoBehaviour
         }
     }
 
-    private class NodeLabels : IComparable<NodeLabels>
+    private class NodeLabels : IComparable<NodeLabels>                                      // Etichette dei nodi da mantenere uniche e circostanziali per ogni richiesta di pathfinding
     {
         public Int16 depth = Int16.MaxValue;
         public int g_cost = 0;
@@ -325,30 +326,29 @@ public class Pathfinding : MonoBehaviour
 
     public static List<GridNode> PathFind(GridNode startNode, GridNode targetNode, GridNode[,] grid, searchAlgorithm searchAlg)
     {
-        Stopwatch sw = new Stopwatch(); // Valutare di separare
-        HashSet<GridNode> explored = new();
-        IFrontier<GridNode> frontier;
-        Dictionary<(int, int), NodeLabels> nodeTable = new();
-        ExplorationPolicy explorationPolicy;
-        PerFrontierNodePolicy perNodePolicy;
+        // SETUP ALGORITMO
 
-        if (!targetNode.walkable)
+        Stopwatch sw = new Stopwatch();                                                     // Cronometro di C# per monitorare l'efficienza temporale del codice
+        HashSet<GridNode> explored = new();                                                 // Insieme di nodi esauriti durante l'esplorazione dello spazio di ricerca
+        IFrontier<GridNode> frontier;                                                       // Interfaccia di struttura dati frontiera poi istanziata a runtime
+        Dictionary<(int, int), NodeLabels> nodeTable = new();                               // Tabella che associa a ogni coordinata nella griglia le etichette del nodo corrispondente
+        ExplorationPolicy explorationPolicy;                                                // Delegato che determina a runtime la strategia da adottare nell'esplorazione dello spazio di ricerca
+        PerFrontierNodePolicy perNodePolicy = (a, b) => { };                                // Delegato di supporto utile per la BeamSearch
+
+        if (!targetNode.walkable)                                                           // Nel caso di un nodo di destinazione non valido, restituisce il più vicino
             targetNode = Grid.closestWalkableNode(targetNode);
 
-        sw.Restart();
+        sw.Restart();                                                                       // Avvio del cronometro
 
-        frontier = ChooseFrontierDataStructure(searchAlg);
+        frontier = ChooseFrontierDataStructure(searchAlg);                                  // Inizializzazioni varie basate sull'algoritmo scelto
         explorationPolicy = ChooseExplorationPolicy(searchAlg);
         InitializeFrontier(startNode, targetNode, frontier, nodeTable, searchAlg);
-        if (searchAlg == searchAlgorithm.BeamSearch)                        // MODIFICARE
-            perNodePolicy = BeamSearchCleanup;
-        else
-            perNodePolicy = (a, b) => { };
-
 
         GridNode currentNode;
         ExplorationInfo explorationInfo = new ExplorationInfo(targetNode, frontier, explored, nodeTable);
 
+        if (searchAlg == searchAlgorithm.BeamSearch)
+            perNodePolicy = BeamSearchCleanup;
         if (searchAlg == searchAlgorithm.IDAstar)
         {
             explorationInfo.grid = grid;
@@ -356,13 +356,15 @@ public class Pathfinding : MonoBehaviour
 
         }
 
+        // CORE ALGORITMO
+
         while (frontier.Count() > 0)
         {
             currentNode = frontier.Extract();
             if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Current;
 
-            if (currentNode == targetNode)
-            {
+            if (currentNode == targetNode)                                                                      // Fintantoché la frontiera non è vuota l'algoritmo ne estrae un nodo e verifica se
+            {                                                                                                   // sia quello obbiettivo. In caso affermativo ricostruisce e comunica il cammino trovato
 
                 sw.Stop();
                 List<GridNode> solutionPath = BuildSolutionPath(startNode, targetNode, nodeTable);
@@ -375,12 +377,12 @@ public class Pathfinding : MonoBehaviour
 
             }
 
-            explored.Add(currentNode);
-
+            explored.Add(currentNode);                                                                          // Altrimenti aggiunge il nodo corrente alla lista Esplorati e aggiunge i vicini
+                                                                                                                // in frontiera
 
             foreach (GridNode neighbour in Grid.getNeighbors(currentNode, grid, false))
             {
-                explorationPolicy(currentNode, neighbour, explorationInfo);
+                explorationPolicy(currentNode, neighbour, explorationInfo);                                     // Lo fa in maniera variabile a seconda della policy scelta a monte
             }
 
             perNodePolicy(currentNode, explorationInfo);

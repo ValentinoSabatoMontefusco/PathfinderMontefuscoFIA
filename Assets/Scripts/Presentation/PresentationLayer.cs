@@ -18,6 +18,15 @@ public class PresentationLayer : MonoBehaviour
     Material nodeMaterial;
     [SerializeField]
     GameObject infoPanel;
+    [SerializeField]
+    GameObject mainCanvas;
+    [SerializeField]
+    GameObject obstacles;
+    [SerializeField]
+    List<GameObject> optionButtons;
+
+    GameObject speedSlider;
+
 
     public float wait_time = 0.01f;
     private float nodeRadius;
@@ -55,7 +64,18 @@ public class PresentationLayer : MonoBehaviour
 
     private static PathRequest currentPathRequest;
     private static Queue<DrawingRequest> drawQueue = new();
-    
+
+    public static Action onObstaclesUpdate;
+    public static Action<string, searchAlgorithm> onConsoleWritePath;
+    public static Action<string> onConsoleWrite;
+
+    public static Action onGraphClick;
+    public static Action onSpeedClick;
+
+    public static Action onObstaclesClick;
+    public static Action onMazeClick;
+    public static Action onResetClick;
+
 
     public void Awake()
     {
@@ -65,18 +85,26 @@ public class PresentationLayer : MonoBehaviour
         GridNode.onNodeStateChange += enqueueNodeDraw;
         PathRequestManager.onPathRequestSet += HandlePathRequest;
         Pathfinding.onStatsReady += EnqueueStats;
+
+        onObstaclesClick += OnObstaclesClick;
+        onGraphClick += OnGraphClick;
+        onSpeedClick += OnSpeedClick;
+        onMazeClick += OnMazeClick;
+        onResetClick += OnResetClick;
+
+        speedSlider = mainCanvas.transform.Find("SpeedSlider").gameObject;
+        
+
+
     }
 
     private void Update()
     {
-        if (statsQueue.Count > 0)
+        if (statsQueue.Count > 0)                                                                   // SCRITTURA IN "CONSOLE" DELL'ESITO DI UNA CHIAMATA DI PATHFINDING
         {
-            GameObject newPanel = Instantiate(infoPanel, content.transform);
             (string, searchAlgorithm) statBundle = statsQueue.Dequeue();
-            newPanel.GetComponentInChildren<TextMeshProUGUI>().text = statBundle.Item1;
-            Color newColor = algorithmColors[statBundle.Item2];
-            newColor.a = 0.55f;
-            newPanel.GetComponent<Image>().color = newColor;
+            onConsoleWritePath?.Invoke(statBundle.Item1, statBundle.Item2);
+           
             
         }
     }
@@ -166,7 +194,7 @@ public class PresentationLayer : MonoBehaviour
             nodeToDraw.drawnNode.transform.localScale = Vector3.one * (nodeRadius * 1.6f);
 
             if (wait_time > 0.01f)
-                yield return new WaitForSeconds(wait_time);
+                yield return new WaitForSeconds(wait_time < 1 ? wait_time * wait_time : wait_time);
           
         }
 
@@ -206,20 +234,81 @@ public class PresentationLayer : MonoBehaviour
 
     public void ChangeWaitTime(float newTime)
     {
-        wait_time = newTime;
+        wait_time = 2.001f - newTime;
     }
 
-    public static Dictionary<searchAlgorithm, Color> algorithmColors = new Dictionary<searchAlgorithm, Color>
+
+
+    public void ToggleActiveComponent(GameObject go)
     {
-        { searchAlgorithm.BFGreedy, new Color(0.70f,0.70f,0.00f) },
-        { searchAlgorithm.BFS, new Color(0.67f,0.15f,0.31f) },
-        { searchAlgorithm.Astar, Color.blue },
-        { searchAlgorithm.UniformCost, new Color(1.00f,0.40f,0.10f) },
-        { searchAlgorithm.DFS, new Color(0.30f,0.30f,0.00f) },
-        { searchAlgorithm.IDDFS, new Color(0.80f,0.40f,0.00f) },
-        { searchAlgorithm.RecursiveDFS, new Color(0.15f,0.30f,0.00f) },
-        { searchAlgorithm.BeamSearch, new Color(0.84f,0.80f,1.00f) },
-        { searchAlgorithm.IDAstar, new Color(0.30f,1.00f,0.88f) },
-        { searchAlgorithm.RBFS, new Color(0.60f,0.00f,0.90f) }
-    };
+        go.SetActive(!go.activeSelf);
+    }
+
+
+    // OPTIONS MENU SECTION
+
+    public void OnMazeClick()
+    {
+        if (obstacles.activeSelf)
+            return;
+
+        GetComponent<Maze_Generator>().DestroyMazeGrid();
+        GetComponent<Maze_Generator>().CreateMazeGrid();
+        GetComponent<Maze_Generator>().StartCoroutine(GetComponent<Maze_Generator>().DFSMazeGeneration((GetComponent<Maze_Generator>().MazeGrid[0, 0])));
+        onMazeClick?.Invoke();
+    }
+
+    public void OnObstaclesClick()
+    {
+        if (GetComponent<Maze_Generator>().MazeGrid != null)
+        {
+            Debug.Log("Generazione ostacoli incompatibile con labirinto. Eliminarlo col tasto 'N'.");
+        }
+        else
+        {
+            bool obsties = obstacles.activeSelf;
+            obstacles.SetActive(!obsties);
+            onObstaclesUpdate?.Invoke();
+
+            onConsoleWrite("Obstacles mode " + (obstacles.activeSelf ? "enabled" : "disabled"));
+
+        }
+    }
+
+    public void OnSpeedClick()
+    {
+
+        if (Time.timeScale != 1.0f)
+        {
+            Time.timeScale = 1.0f;
+            onConsoleWrite("Speed returned to normal");
+        }
+        else
+        {
+            Time.timeScale = 3.0f;
+            onConsoleWrite("Speed increased");
+        }
+
+    }
+
+    public void OnGraphClick()
+    {
+        bool toggleValue;
+        toggleValue = PresentationLayer.GraphRep ? false : true;
+        PresentationLayer.GraphRep = toggleValue;
+        
+        speedSlider.SetActive(toggleValue);
+        optionButtons[2].GetComponentInChildren<TextMeshProUGUI>().text = (toggleValue ? "Disable" : "Enable") + " Showcase";
+        onConsoleWrite("Showcase mode " + (toggleValue ? "enabled" : "disabled"));
+    }
+
+    public void OnResetClick()
+    {
+        foreach (GameObject player in GameObject.FindGameObjectsWithTag("Player"))
+        {
+            player.GetComponent<Player_Movement>().ResetPlayer();
+        }
+
+       
+    }
 }

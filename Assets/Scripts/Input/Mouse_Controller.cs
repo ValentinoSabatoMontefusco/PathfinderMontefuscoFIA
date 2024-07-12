@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
@@ -33,13 +34,7 @@ public class Mouse_Controller : MonoBehaviour
     RawImage topPerspective;
     bool isHovering;
 
-    public static Action onObstaclesUpdate;
-    public static Action<bool> onGraphClick;
-    public static Action<bool> onSpeedClick;
-
-    public static Action<bool> onObstaclesClick;
-    public static Action onMazeClick;
-    public static Action onResetClick;
+   
     
 
     // Start is called before the first frame update
@@ -50,7 +45,7 @@ public class Mouse_Controller : MonoBehaviour
         players = GameObject.FindGameObjectsWithTag("Player");
         isPressed = false;
 
-        onMazeClick += onMazeClick;
+        
     }
 
     // Update is called once per frame
@@ -63,7 +58,7 @@ public class Mouse_Controller : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.M))
         {
-            OnMazeClick();
+            PresentationLayer.onMazeClick?.Invoke();
 
         }
 
@@ -75,18 +70,24 @@ public class Mouse_Controller : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.O))
         {
-            OnObstaclesClick();
+            PresentationLayer.onObstaclesClick?.Invoke();
 
         }
 
         if (Input.GetKeyDown(KeyCode.S))
         {
-            OnSpeedClick();
+            PresentationLayer.onSpeedClick?.Invoke();
         }
 
         if (Input.GetKeyDown(KeyCode.G))
         {
-            OnGraphClick();
+            PresentationLayer.onGraphClick?.Invoke();
+        }
+
+        if (Input.GetKeyDown(KeyCode.R)) {
+
+            PresentationLayer.onResetClick?.Invoke();
+
         }
 
         if (Input.GetKeyDown(KeyCode.H))
@@ -225,53 +226,6 @@ public class Mouse_Controller : MonoBehaviour
 
     }
 
-    public void OnMazeClick()
-    {
-        GetComponent<Maze_Generator>().DestroyMazeGrid();
-        GetComponent<Maze_Generator>().CreateMazeGrid();
-        GetComponent<Maze_Generator>().StartCoroutine(GetComponent<Maze_Generator>().DFSMazeGeneration((GetComponent<Maze_Generator>().MazeGrid[0, 0])));
-        onMazeClick?.Invoke();
-    }
-    
-    public void OnObstaclesClick()
-    {
-        if (GetComponent<Maze_Generator>().MazeGrid != null)
-        {
-            Debug.Log("Generazione ostacoli incompatibile con labirinto. Eliminarlo col tasto 'N'.");
-        }
-        else
-        {
-            bool obsties = obstacles.activeSelf;
-            obstacles.SetActive(!obsties);
-            onObstaclesClick?.Invoke(!obsties);
-           
-
-            onObstaclesUpdate?.Invoke();
-
-
-        }
-    }
-
-    public void OnSpeedClick()
-    {
-
-        if (Time.timeScale != 1.0f)
-        {
-            Time.timeScale = 1.0f;
-            onSpeedClick?.Invoke(false);
-        }
-        else
-        {
-            Time.timeScale = 3.0f;
-            onSpeedClick?.Invoke(true);
-        }
-
-    }
-
-    public void OnGraphClick()
-    {
-        PresentationLayer.GraphRep = PresentationLayer.GraphRep ? false : true;
-        onGraphClick?.Invoke(PresentationLayer.GraphRep);
-    }
+   
 }
 

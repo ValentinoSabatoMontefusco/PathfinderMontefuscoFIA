@@ -41,7 +41,7 @@ public class Player_Movement : MonoBehaviour
             grid = pathfindingReference.GetComponent<Grid>().createGrid();
 
         };
-        Mouse_Controller.onObstaclesUpdate += () =>
+        PresentationLayer.onObstaclesUpdate += () =>
         {
             grid = pathfindingReference.GetComponent<Grid>().createGrid();
         };
@@ -87,15 +87,14 @@ public class Player_Movement : MonoBehaviour
                 }
             }
 
-            if (Input.GetKeyDown(KeyCode.R)) 
-            {
-                StopAllCoroutines();
-                transform.position = new Vector3(-23.5f, 0, -23.5f);
-                animator.SetBool(isMoving, false);
-            }
        }
 
-    
+    public void ResetPlayer()
+    {
+        StopAllCoroutines();
+        transform.position = new Vector3(-23.5f, 0, -23.5f);
+        animator.SetBool(isMoving, false);
+    }
 
     public void startMovement(Vector3[] path, bool success)
     {
