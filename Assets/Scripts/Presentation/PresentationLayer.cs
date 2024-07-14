@@ -157,25 +157,37 @@ public class PresentationLayer : MonoBehaviour
             {
                 nodeToDraw.drawnNode = Instantiate(nodePrefab, nodeToDraw.worldPos + Vector3.up * 0.5f, Quaternion.identity);
                 nodeToDraw.drawnNode.GetComponent<Renderer>().material = nodeMaterial;
-                if (nodeToDraw.f_cost > 0)
+
+                TextMeshPro TMPComp = nodeToDraw.drawnNode.GetComponentInChildren<TextMeshPro>();
+                switch (drawReq.pathRequest.searchType)
                 {
-                    TextMeshPro TMPComp = nodeToDraw.drawnNode.GetComponentInChildren<TextMeshPro>();
-                    TMPComp.text = nodeToDraw.F_cost.ToString();
+                    
+                    case searchAlgorithm.IDDFS: if (nodeToDraw.depth != 0)
+                        {
+                            TMPComp.text = nodeToDraw.depth.ToString();
+                        }
+                        break;
+
+                    case searchAlgorithm.BFGreedy:
+                    case searchAlgorithm.Astar:
+                    case searchAlgorithm.UniformCost:
+                    case searchAlgorithm.IDAstar:
+                    case searchAlgorithm.BeamSearch: if (nodeToDraw.f_cost != 0)
+                        {
+                            TMPComp.text = nodeToDraw.f_cost.ToString();
+                            if (nodeToDraw.g_cost != 0 && nodeToDraw.h_cost != 0)
+                            {
+                                TMPComp.text += "\n" + nodeToDraw.g_cost.ToString() + " + " + nodeToDraw.h_cost.ToString();
+                            }
+                        }
+                        break;
+                    case searchAlgorithm.RBFS: if (nodeToDraw.f_cost > 0)
+                        {
+                            TMPComp.text = nodeToDraw.F_cost.ToString();
+                        } break;
+                    default: break;
                 }
-                else if (nodeToDraw.depth != 0)
-                {
-                    TextMeshPro TMPComp = nodeToDraw.drawnNode.GetComponentInChildren<TextMeshPro>();
-                    TMPComp.text = nodeToDraw.depth.ToString();
-                }
-                else if (nodeToDraw.f_cost != 0)
-                {
-                    TextMeshPro TMPComp = nodeToDraw.drawnNode.GetComponentInChildren<TextMeshPro>();
-                    TMPComp.text = nodeToDraw.f_cost.ToString();
-                    if (nodeToDraw.g_cost != 0 && nodeToDraw.h_cost != 0)
-                    {
-                        TMPComp.text += "\n" + nodeToDraw.g_cost.ToString() + " + " + nodeToDraw.h_cost.ToString();
-                    }
-                }
+        
             } else
             {
                 if (drawReq.nodeState == nodeStateEnum.Unexplored)

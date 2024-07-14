@@ -261,7 +261,8 @@ public class Pathfinding : MonoBehaviour
                 nodeTable[neighbour.GridXY].h_cost = Grid.getDistance(neighbour, targetNode);
                 nodeTable[neighbour.GridXY].parent = currentNode;
 
-
+                neighbour.g_cost = 0;
+                neighbour.h_cost = nodeTable[neighbour.GridXY].h_cost;
 
                 if (!frontier.Contains(neighbour))
                 {
@@ -275,12 +276,19 @@ public class Pathfinding : MonoBehaviour
 
     private static void UniformCostPolicy(GridNode currentNode, GridNode neighbour, ExplorationInfo expInfo)
     {
-        expInfo.Unpackage(out GridNode targetNode, out IFrontier<GridNode> frontier, out ICollection<GridNode> explored, out Dictionary<(int, int), NodeLabels> nodeTable);
+        expInfo.Unpackage(out GridNode targetNode, out IFrontier<GridNode> frontier, out ICollection<GridNode> explored, 
+            out Dictionary<(int, int), NodeLabels> nodeTable);
+        
+        /* L'algoritmo verifica il costo di cammino per il vicino. Se incontrato per la prima volta, lo etichetta 
+         * opportunamente e lo inserisce in frontiera. Altrimenti aggiorna la frontiera solo se ha trovato un costo
+         * di cammino inferiore rispetto a prima. */
 
         if (!explored.Contains(neighbour) && neighbour.walkable == true)
         {
-            int newCost = nodeTable[currentNode.GridXY].g_cost + Grid.getDistance(currentNode, neighbour) + neighbour.movementPenalty;
-            if (!nodeTable.ContainsKey(neighbour.GridXY) || (nodeTable.ContainsKey(neighbour.GridXY) && newCost < nodeTable[neighbour.GridXY].g_cost))
+            int newCost = nodeTable[currentNode.GridXY].g_cost + Grid.getDistance(currentNode, neighbour) + 
+                neighbour.movementPenalty;
+            if (!nodeTable.ContainsKey(neighbour.GridXY) || (nodeTable.ContainsKey(neighbour.GridXY) 
+                && newCost < nodeTable[neighbour.GridXY].g_cost))
             {
                 if (!nodeTable.ContainsKey(neighbour.GridXY))
                 {
@@ -288,6 +296,8 @@ public class Pathfinding : MonoBehaviour
                 }
                 nodeTable[neighbour.GridXY].g_cost = newCost;
                 nodeTable[neighbour.GridXY].parent = currentNode;
+
+                neighbour.g_cost = newCost;
 
                 if (!frontier.Contains(neighbour))
                 {
@@ -303,15 +313,21 @@ public class Pathfinding : MonoBehaviour
         }
     }
 
+
+    // CODE FOR BFS & DFS
     private static void BasicPolicy(GridNode currentNode, GridNode neighbour, ExplorationInfo expInfo)
     {
-        expInfo.Unpackage(out GridNode targetNode, out IFrontier<GridNode> frontier, out ICollection<GridNode> explored, out Dictionary<(int, int), NodeLabels> nodeTable);
+        expInfo.Unpackage(out GridNode targetNode, out IFrontier<GridNode> frontier, out ICollection<GridNode> explored,
+            out Dictionary<(int, int), NodeLabels> nodeTable);
 
-        if (!explored.Contains(neighbour) && neighbour.walkable == true)
+        /* Se il successore considerato è agibile e non presente nella lista Esplorati o Frontiera, viene
+           aggiunto a quest'ultima e l'arco con il nodo corrente salvato in memoria */
+
+        if (!explored.Contains(neighbour) && neighbour.walkable == true)        
         {
             if (!frontier.Contains(neighbour))
             {
-                nodeTable.Add(neighbour.GridXY, new NodeLabels());
+                nodeTable.Add(neighbour.GridXY, new NodeLabels());              
                 nodeTable[neighbour.GridXY].parent = currentNode;
 
                 frontier.Add(neighbour);
@@ -328,19 +344,19 @@ public class Pathfinding : MonoBehaviour
     {
         // SETUP ALGORITMO
 
-        Stopwatch sw = new Stopwatch();                                                     // Cronometro di C# per monitorare l'efficienza temporale del codice
-        HashSet<GridNode> explored = new();                                                 // Insieme di nodi esauriti durante l'esplorazione dello spazio di ricerca
-        IFrontier<GridNode> frontier;                                                       // Interfaccia di struttura dati frontiera poi istanziata a runtime
-        Dictionary<(int, int), NodeLabels> nodeTable = new();                               // Tabella che associa a ogni coordinata nella griglia le etichette del nodo corrispondente
-        ExplorationPolicy explorationPolicy;                                                // Delegato che determina a runtime la strategia da adottare nell'esplorazione dello spazio di ricerca
-        PerFrontierNodePolicy perNodePolicy = (a, b) => { };                                // Delegato di supporto utile per la BeamSearch
+        Stopwatch sw = new Stopwatch();                                     // Cronometro di C# per monitorare l'efficienza temporale del codice
+        HashSet<GridNode> explored = new();                                 // Insieme di nodi esauriti durante l'esplorazione dello spazio di ricerca
+        IFrontier<GridNode> frontier;                                       // Interfaccia di struttura dati frontiera poi istanziata a runtime
+        Dictionary<(int, int), NodeLabels> nodeTable = new();               // Tabella che associa a ogni coordinata nella griglia le etichette del nodo corrispondente
+        ExplorationPolicy explorationPolicy;                                // Delegato che determina a runtime come esplorare lo spazio di ricerca
+        PerFrontierNodePolicy perNodePolicy = (a, b) => { };                // Delegato di supporto utile per la BeamSearch
 
-        if (!targetNode.walkable)                                                           // Nel caso di un nodo di destinazione non valido, restituisce il più vicino
+        if (!targetNode.walkable)                                           // Nel caso di un nodo di destinazione non valido, restituisce il più vicino
             targetNode = Grid.closestWalkableNode(targetNode);
 
-        sw.Restart();                                                                       // Avvio del cronometro
+        sw.Restart();                                                       // Avvio del cronometro
 
-        frontier = ChooseFrontierDataStructure(searchAlg);                                  // Inizializzazioni varie basate sull'algoritmo scelto
+        frontier = ChooseFrontierDataStructure(searchAlg);                  // Inizializzazioni varie basate sull'algoritmo scelto
         explorationPolicy = ChooseExplorationPolicy(searchAlg);
         InitializeFrontier(startNode, targetNode, frontier, nodeTable, searchAlg);
 
@@ -363,8 +379,8 @@ public class Pathfinding : MonoBehaviour
             currentNode = frontier.Extract();
             if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Current;
 
-            if (currentNode == targetNode)                                                                      // Fintantoché la frontiera non è vuota l'algoritmo ne estrae un nodo e verifica se
-            {                                                                                                   // sia quello obbiettivo. In caso affermativo ricostruisce e comunica il cammino trovato
+            if (currentNode == targetNode)                                          // Fintantoché la frontiera non è vuota l'algoritmo ne estrae un nodo e verifica se
+            {                                                                       // sia quello obbiettivo. In caso affermativo ricostruisce e comunica il cammino trovato
 
                 sw.Stop();
                 List<GridNode> solutionPath = BuildSolutionPath(startNode, targetNode, nodeTable);
@@ -377,12 +393,12 @@ public class Pathfinding : MonoBehaviour
 
             }
 
-            explored.Add(currentNode);                                                                          // Altrimenti aggiunge il nodo corrente alla lista Esplorati e aggiunge i vicini
-                                                                                                                // in frontiera
+            explored.Add(currentNode);                                              // Altrimenti aggiunge il nodo corrente alla lista Esplorati e aggiunge i vicini
+                                                                                    // in frontiera
 
             foreach (GridNode neighbour in Grid.getNeighbors(currentNode, grid, false))
             {
-                explorationPolicy(currentNode, neighbour, explorationInfo);                                     // Lo fa in maniera variabile a seconda della policy scelta a monte
+                explorationPolicy(currentNode, neighbour, explorationInfo);             // Lo fa in maniera variabile a seconda della policy scelta a monte
             }
 
             perNodePolicy(currentNode, explorationInfo);
@@ -494,12 +510,16 @@ public class Pathfinding : MonoBehaviour
         return null;
     }
 
-    private static List<GridNode> RecursivePathFind(GridNode startNode, GridNode targetNode, GridNode[,] grid, searchAlgorithm searchAlg)
+    private static List<GridNode> RecursivePathFind(GridNode startNode, GridNode targetNode, 
+        GridNode[,] grid, searchAlgorithm searchAlg)
     {
         Stopwatch sw = new Stopwatch();
         sw.Restart();
         HashSet<GridNode> explored = new();
         Dictionary<(int, int), NodeLabels> nodeTable = new();
+
+        /* Il pathfinding ricorsivo fa uso di un delegato distinto da quello iterativo*/
+
         RecursivePolicy recursivePolicy = ChooseRecursivePolicy(searchAlg);
 
         if (!targetNode.walkable)
@@ -507,10 +527,10 @@ public class Pathfinding : MonoBehaviour
 
         ExplorationInfo explorationInfo = new(targetNode, grid, explored, nodeTable);
 
-
-
         InitializeFrontier(startNode, targetNode, null, nodeTable, searchAlg);
 
+        /* Se la ricorsione trova un cammino valido restituisce true e consente di ricostruirlo
+         * tramite la tabella delle etichette dei nodi che ha informazioni sugli archi parent-child */
         if (!recursivePolicy(startNode, explorationInfo, int.MaxValue))
             return null;
 
@@ -524,13 +544,19 @@ public class Pathfinding : MonoBehaviour
         
         return BuildSolutionPath(startNode, targetNode, nodeTable);
 
-
     }
 
+    
     private static bool RecursiveDFS(GridNode currentNode, ExplorationInfo expInfo, int additionalInfo)
     {
-        expInfo.Unpackage(out GridNode targetNode, out GridNode[,] grid, out ICollection<GridNode> explored, out Dictionary<(int, int), NodeLabels> nodeTable);
+        expInfo.Unpackage(out GridNode targetNode, out GridNode[,] grid, out ICollection<GridNode> explored,
+            out Dictionary<(int, int), NodeLabels> nodeTable);
         if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Current;
+
+
+        /* Se il nodo corrente è quello obbiettivo, si interrompe la ricorsione con successo. Altrimenti 
+           si considerano i vicini del nodo corrente e, se non sono stati già esplorati e sono agibili,
+           vengono immediatamente chiamati */
 
         if (currentNode == targetNode)
             return true;
@@ -555,7 +581,8 @@ public class Pathfinding : MonoBehaviour
 
     private static bool RecursiveIDDFS(GridNode currentNode, ExplorationInfo expInfo, int cutValue)
     {
-        expInfo.Unpackage(out GridNode targetNode, out GridNode[,] grid, out ICollection<GridNode> explored, out Dictionary<(int, int), NodeLabels> nodeTable);
+        expInfo.Unpackage(out GridNode targetNode, out GridNode[,] grid, out ICollection<GridNode> explored, 
+            out Dictionary<(int, int), NodeLabels> nodeTable);
 
         if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Current;
 
@@ -566,6 +593,9 @@ public class Pathfinding : MonoBehaviour
 
         explored.Add(currentNode);
         if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Explored;
+
+        /* Se si è raggiunto il punto di taglio si interrompe la ricorsione, altrimenti si continua
+         * dando priorità ai vicini più distanti dalla radice */
 
         if (nodeTable[currentNode.GridXY].depth == cutValue)
         {
@@ -587,6 +617,7 @@ public class Pathfinding : MonoBehaviour
         return false;
     }
 
+    
     private static bool IterativeDeepeningRecDFS(GridNode currentNode, ExplorationInfo expInfo, int cutValue)
     {
         for (int i = 0; i < expInfo.grid.Length; i++)
@@ -596,11 +627,12 @@ public class Pathfinding : MonoBehaviour
             {
                 foreach (GridNode node in expInfo.explored)
                 {
-                    node.nodestate = nodeStateEnum.Unexplored;
+                    node.nodestate = nodeStateEnum.Unexplored;  
                 }
             }
-
+            /* A ogni iterazione la lista degli esplorati è ripulita e le informazioni dimenticate */
             expInfo.explored.Clear();
+
             if (RecursiveIDDFS(currentNode, expInfo, cutValue))
                 return true;
         }
