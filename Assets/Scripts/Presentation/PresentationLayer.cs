@@ -183,7 +183,7 @@ public class PresentationLayer : MonoBehaviour
                         break;
                     case searchAlgorithm.RBFS: if (nodeToDraw.f_cost > 0)
                         {
-                            TMPComp.text = nodeToDraw.F_cost.ToString();
+                            TMPComp.text = nodeToDraw.f_cost.ToString() + "\n (" + nodeToDraw.F_cost.ToString() + ")";
                         } break;
                     default: break;
                 }
@@ -267,7 +267,6 @@ public class PresentationLayer : MonoBehaviour
         GetComponent<Maze_Generator>().DestroyMazeGrid();
         GetComponent<Maze_Generator>().CreateMazeGrid();
         GetComponent<Maze_Generator>().StartCoroutine(GetComponent<Maze_Generator>().DFSMazeGeneration((GetComponent<Maze_Generator>().MazeGrid[0, 0])));
-        onMazeClick?.Invoke();
     }
 
     public void OnObstaclesClick()

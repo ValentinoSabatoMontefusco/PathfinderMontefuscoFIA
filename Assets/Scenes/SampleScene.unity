@@ -6734,7 +6734,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   nodeMaterial: {fileID: 2100000, guid: 1bb9ea6dc96303048870a4320ea08ead, type: 2}
   nodePrefab: {fileID: 1770718188855582463, guid: fd1506918122ef649af9383bca73f3f6, type: 3}
-  nodeRadius: 0.33
+  nodeRadius: 0.25
   unwalkableLayer:
     serializedVersion: 2
     m_Bits: 8

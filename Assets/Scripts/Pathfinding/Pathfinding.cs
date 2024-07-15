@@ -157,13 +157,17 @@ public class Pathfinding : MonoBehaviour
 
     private static void AStarPolicy(GridNode currentNode, GridNode neighbour, ExplorationInfo expInfo)
     {
-        expInfo.Unpackage(out GridNode targetNode, out IFrontier<GridNode> frontier, out ICollection<GridNode> explored, out Dictionary<(int, int), NodeLabels> nodeTable);
+        expInfo.Unpackage(out GridNode targetNode, out IFrontier<GridNode> frontier, out ICollection<GridNode> explored, 
+            out Dictionary<(int, int), NodeLabels> nodeTable);
 
+        /* A* non fa altro che comporre gli approcci della Ricerca a Costo Uniforme e di quella greedy */
 
         if (!explored.Contains(neighbour) && neighbour.walkable == true)
         {
-            int newCost = nodeTable[currentNode.GridXY].g_cost + Grid.getDistance(currentNode, neighbour) + neighbour.movementPenalty;
-            if (!nodeTable.ContainsKey(neighbour.GridXY) || (nodeTable.ContainsKey(neighbour.GridXY) && newCost < nodeTable[neighbour.GridXY].g_cost))
+            int newCost = nodeTable[currentNode.GridXY].g_cost + Grid.getDistance(currentNode, neighbour)
+                + neighbour.movementPenalty;
+            if (!nodeTable.ContainsKey(neighbour.GridXY) || (nodeTable.ContainsKey(neighbour.GridXY) &&
+                newCost < nodeTable[neighbour.GridXY].g_cost))
             {
                 if (!nodeTable.ContainsKey(neighbour.GridXY))
                 {
@@ -173,7 +177,6 @@ public class Pathfinding : MonoBehaviour
                 nodeTable[neighbour.GridXY].h_cost = Grid.getDistance(neighbour, targetNode);
                 nodeTable[neighbour.GridXY].parent = currentNode;
 
-                // TENTATIVE
                 neighbour.g_cost = newCost;
                 neighbour.h_cost = nodeTable[neighbour.GridXY].h_cost;
 
@@ -188,14 +191,17 @@ public class Pathfinding : MonoBehaviour
                     if (PresentationLayer.GraphRep) neighbour.nodestate = nodeStateEnum.Frontier;
                 }
             }
-
         }
-
     }
 
     private static void BeamSearchCleanup(GridNode currentNode, ExplorationInfo expInfo)
     {
-        expInfo.Unpackage(out GridNode targetNode, out IFrontier<GridNode> frontier, out ICollection<GridNode> explored, out Dictionary<(int, int), NodeLabels> nodeTable);
+        expInfo.Unpackage(out GridNode targetNode, out IFrontier<GridNode> frontier, out ICollection<GridNode> explored,
+            out Dictionary<(int, int), NodeLabels> nodeTable);
+
+        /* Il metodo, invocato al termine di ogni espansione di nodo, consulta la lista ordinata in base all'f_cost
+         * dei vicini e ne inserisce in frontiera solo i primi k */
+
         SortedList<int, GridNode> beamList = expInfo.beamSearchList;
         for (int i = 0; i < beamSearchK && i < beamList.Count; i++)
         {
@@ -250,7 +256,12 @@ public class Pathfinding : MonoBehaviour
 
     private static void BFGreedyPolicy(GridNode currentNode, GridNode neighbour, ExplorationInfo expInfo)
     {
-        expInfo.Unpackage(out GridNode targetNode, out IFrontier<GridNode> frontier, out ICollection<GridNode> explored, out Dictionary<(int, int), NodeLabels> nodeTable);
+        expInfo.Unpackage(out GridNode targetNode, out IFrontier<GridNode> frontier, 
+            out ICollection<GridNode> explored, out Dictionary<(int, int), NodeLabels> nodeTable);
+
+        /* La chiamata getDistance tra il vicino e il nodo destinazione conferisce la distanza euclidea
+         * qui denotata con h_cost; se il nodo è inedito, è inserito in una frontiera implementata con
+         * una min-coda a priorità. */
 
         if (!explored.Contains(neighbour) && neighbour.walkable == true)
         {
@@ -472,8 +483,6 @@ public class Pathfinding : MonoBehaviour
                                     nextBestCutValue = Mathf.Min(nextBestCutValue, nodeTable[neighbour.GridXY].f_cost);
                                 }
                             }
-
-
                             else
                             {
                                 frontier.UpdateItem(neighbour, nodeTable[neighbour.GridXY].f_cost);
@@ -505,7 +514,7 @@ public class Pathfinding : MonoBehaviour
             nextBestCutValue = int.MaxValue;
             frontier.Add(startNode, nodeTable[startNode.GridXY].f_cost, nodeTable[startNode.GridXY].h_cost);
 
-        } while (minFCost < grid.Length / 2);
+        } while (minFCost < grid.Length);
 
         return null;
     }
@@ -685,30 +694,48 @@ public class Pathfinding : MonoBehaviour
 
                 int newFCost = Mathf.Max(nodeTable[neighbour.GridXY].f_cost, nodeTable[currentNode.GridXY].F_cost);
                 nodeTable[neighbour.GridXY].F_cost = newFCost;
-                // TENTATIVE
-                neighbour.F_cost = newFCost;
                 successors.Add(nodeTable[neighbour.GridXY], neighbour);
+
+                neighbour.F_cost = newFCost;
             }
         }
 
         while (successors.Count > 0)
         {
+            /* L'f_limit è un parametro che tiene in conto quale sia il secondo percorso più
+             * promettente, temporaneamente scartato nella ricorsione in corso. Se il miglior
+             * successore del nodo attuale lo supera, la ricorsione è interrotta e l'F_Cost
+             * corrente è assegnato ricorsivamente agli antenati */
+
             if (successors.Keys[0].F_cost > f_limit)
             {
                 explored.Remove(currentNode);
                 if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Unexplored;
                 return (false, successors.Keys[0].F_cost);
             }
+
+            /* In caso contrario, si sceglie come candidato a proseguire l'esplorazione il
+             * successore a costo stimato più basso e si conserva in memoria l'F_Cost del
+             * secondo migliore, momentameamente scartato */
+
             int secondBest = int.MaxValue;
             if (successors.Count >= 2)
                 secondBest = successors.Keys[1].F_cost;
             GridNode fittest = successors.Values[0];
 
             if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Explored;
-            //successors.RemoveAt(0);
-            bool isSuccess;
-            (isSuccess, nodeTable[fittest.GridXY].F_cost) = RecursiveBestFirst2(fittest, expInfo, Mathf.Min(f_limit, secondBest));
+            
+            /*L'esplorazione procede ricorsivamente sul 'fittest', ponendo come f_limit il
+             * minore fra l'f_limit corrente e l'F_cost dell'alternativa. In caso superamento
+             * del limite durante l'esplorazione, l'F_cost del fittest è aggiornato 
+             * oppportunamente. */
 
+            bool isSuccess;
+            (isSuccess, nodeTable[fittest.GridXY].F_cost) = 
+                RecursiveBestFirst2(fittest, expInfo, Mathf.Min(f_limit, secondBest));
+
+            /* Se l'esplorazione ha avuto successo lo si comunica al 'main', altrimenti si
+             * aggiorna la lista dei successori con i nuovi F_Cost e si reitera */
             if (isSuccess)
                 return (true, f_limit);
             fittest.F_cost = nodeTable[fittest.GridXY].F_cost;
@@ -716,7 +743,6 @@ public class Pathfinding : MonoBehaviour
 
             successors.RemoveAt(0);
             successors.Add(nodeTable[fittest.GridXY], fittest);
-
 
         }
 
