@@ -182,7 +182,7 @@ public class Grid : MonoBehaviour
 
     public static int getDistance(GridNode node1, GridNode node2)
     {
-        //return Mathf.Abs(Mathf.RoundToInt(Mathf.Sqrt(((node1.GridX+node2.GridX)^2 + (node1.GridY+node2.GridY)^2)*10)));
+        
 
         int distX = Mathf.Abs(node1.GridX - node2.GridX);
         int distY = Mathf.Abs(node1.GridY - node2.GridY);
@@ -195,6 +195,8 @@ public class Grid : MonoBehaviour
             distance = 14 * distX + 10 * (distY - distX);
 
         return distance;
+
+        //return Mathf.Abs(Mathf.RoundToInt(Mathf.Sqrt(((node1.GridX+node2.GridX)^2 + (node1.GridY+node2.GridY)^2)*10)));
     }
 
     public static GridNode closestWalkableNode(GridNode uwNode)

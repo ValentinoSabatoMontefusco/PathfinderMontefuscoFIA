@@ -53,12 +53,14 @@ public class PresentationLayer : MonoBehaviour
         public GridNode gridnode;
         public nodeStateEnum nodeState;
         public PathRequest pathRequest;
+        public int currentFCost;
 
         public DrawingRequest(GridNode gridnode, nodeStateEnum nodeState, PathRequest pathRequest)
         {
             this.gridnode = gridnode;
             this.nodeState = nodeState;
             this.pathRequest = pathRequest;
+            currentFCost = gridnode.F_cost;
         }
     }
 
@@ -183,7 +185,7 @@ public class PresentationLayer : MonoBehaviour
                         break;
                     case searchAlgorithm.RBFS: if (nodeToDraw.f_cost > 0)
                         {
-                            TMPComp.text = nodeToDraw.f_cost.ToString() + "\n (" + nodeToDraw.F_cost.ToString() + ")";
+                            TMPComp.text = nodeToDraw.f_cost.ToString() + "\n (" + drawReq.currentFCost.ToString() + ")";
                         } break;
                     default: break;
                 }
