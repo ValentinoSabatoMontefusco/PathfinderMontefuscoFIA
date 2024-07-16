@@ -49,6 +49,8 @@ public class Pathfinding : MonoBehaviour
                 catch (StackOverflowException e)
                 {
                     Debug.Log("StackOverflow verificata");
+                    onStatsReady?.Invoke(AlgToString(pathRequest.searchType) + " triggered a Stack Overflow!", pathRequest.searchType);
+
                 }
             });
 
@@ -656,7 +658,6 @@ public class Pathfinding : MonoBehaviour
 
     private static (bool, int) RecursiveBestFirst2(GridNode currentNode, ExplorationInfo expInfo, int f_limit)
     {
-
         expInfo.Unpackage(out GridNode targetNode, out GridNode[,] grid, out ICollection<GridNode> explored, out Dictionary<(int, int), NodeLabels> nodeTable);
 
         if (PresentationLayer.GraphRep) currentNode.nodestate = nodeStateEnum.Current;
@@ -686,7 +687,7 @@ public class Pathfinding : MonoBehaviour
                     nodeTable[neighbour.GridXY].h_cost = Grid.getDistance(neighbour, targetNode);
                     nodeTable[neighbour.GridXY].parent = currentNode;
 
-                    // TENTATIVE
+                    
                     neighbour.g_cost = newCost;
                     neighbour.h_cost = nodeTable[neighbour.GridXY].h_cost;
 
@@ -743,12 +744,8 @@ public class Pathfinding : MonoBehaviour
 
             successors.RemoveAt(0);
             successors.Add(nodeTable[fittest.GridXY], fittest);
-
         }
-
-
         return (false, int.MaxValue);
-
     }
 
     public static string AlgToString(searchAlgorithm searchAlg)

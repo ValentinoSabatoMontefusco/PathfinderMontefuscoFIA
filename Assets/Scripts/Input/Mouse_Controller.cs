@@ -74,7 +74,7 @@ public class Mouse_Controller : MonoBehaviour
 
         }
 
-        if (Input.GetKeyDown(KeyCode.S))
+        if (Input.GetKeyDown(KeyCode.X))
         {
             PresentationLayer.onSpeedClick?.Invoke();
         }

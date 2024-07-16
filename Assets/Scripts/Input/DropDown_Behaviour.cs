@@ -49,6 +49,8 @@ public class DropDown_Behaviour : MonoBehaviour
         GetComponent<Dropdown>().onValueChanged.AddListener((value) =>                  // Listener che, alla selezione di un algoritmo, lo applica a tutti gli agenti selezionati
         {                                                                               // oppure all'unico agente nella scena, se è solo
             Player_Movement playerScript;
+            searchAlgorithm chosenAlgorithm;
+            optionMap.TryGetValue(value, out chosenAlgorithm);
 
             if (playerList.Length > 1)
             {
@@ -56,13 +58,17 @@ public class DropDown_Behaviour : MonoBehaviour
                 {
                     playerScript = player.GetComponent<Player_Movement>();
                     if (playerScript.isSelected)
-                        optionMap.TryGetValue(value, out playerScript.searchType);
+                        playerScript.searchType = chosenAlgorithm;
+                        //optionMap.TryGetValue(value, out playerScript.searchType);
                 }
                 return;
             }
 
             playerScript = playerList[0].GetComponent<Player_Movement>();
-            optionMap.TryGetValue(value, out playerScript.searchType);
+            playerScript.searchType = chosenAlgorithm;
+        //optionMap.TryGetValue(value, out playerScript.searchType);
+
+        PresentationLayer.onConsoleWritePath?.Invoke("Pathfinding Algorithm swapped to " + Pathfinding.AlgToString(chosenAlgorithm), chosenAlgorithm);
 
         });
     }
